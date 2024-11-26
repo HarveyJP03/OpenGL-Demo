@@ -9,10 +9,13 @@ Grid::Grid(uint32_t width, uint32_t height, uint32_t step) : m_width(width), m_h
 }
 
 
-void Grid::makeVertices() {
-    for (int x = 0; x <= m_width; x++) {
+void Grid::makeVertices() 
+{
+    for (int x = 0; x <= m_width; x++) 
+    {
         float offsetX = x * m_stepSize;
-        for (int z = 0; z <= m_height; z++) {
+        for (int z = 0; z <= m_height; z++) 
+        {
             float offsetZ = z * m_stepSize;
 
             // Position in XYZ (Y is 0 for a flat surface)
@@ -36,8 +39,10 @@ void Grid::makeVertices() {
 void Grid::makeIndices() {
     // Calculate indices for indexed draw calls
 
-    for (int z = 0; z < m_height; z++) {
-        for (int x = 0; x < m_width; x++) {
+    for (int z = 0; z < m_height; z++)
+    {
+        for (int x = 0; x < m_width; x++) 
+        {
             // Calculate the indices of the four corners of each cell
             uint32_t topLeft = z * (m_width + 1) + x;
             uint32_t topRight = topLeft + 1;

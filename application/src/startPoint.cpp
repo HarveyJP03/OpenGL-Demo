@@ -8,8 +8,8 @@
 StartPoint::StartPoint(GLFWWindowImpl& win) : Layer(win)
 {
 
-	m_mainScene.reset(new Scene);
-	ShaderDescription phongShaderDesc;
+	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
+	ShaderDescription phongShaderDesc; //Path to source files and shader type, used to load the shader.
 	phongShaderDesc.type = ShaderType::rasterization;
 	phongShaderDesc.vertexSrcPath = "./assets/shaders/PhongVert.glsl";
 	phongShaderDesc.fragmentSrcPath = "./assets/shaders/PhongFrag.glsl";
@@ -17,15 +17,15 @@ StartPoint::StartPoint(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Shader> phongShader;
 	phongShader = std::make_shared<Shader>(phongShaderDesc);
 	VBOLayout cubeLayout = {
-		{GL_FLOAT, 3},  // position
+		{GL_FLOAT, 3},  // position,3 for 3 values for attribute (vec3)
 		{GL_FLOAT, 3},  // normal
-		{GL_FLOAT, 2}   // UV
+		{GL_FLOAT, 2}   // UV, 2 for 2 values (vec2)
 	};
 
-	Model cubeModel("./assets/models/whiteCube/letterCube.obj");
+	Model cubeModel("./assets/models/whiteCube/letterCube.obj"); //model has vertices, position and indices
 	std::shared_ptr<VAO> cubeVAO;
-	cubeVAO = std::make_shared<VAO>(cubeModel.m_meshes[0].indices);
-	cubeVAO->addVertexBuffer(cubeModel.m_meshes[0].vertices, cubeLayout);
+	cubeVAO = std::make_shared<VAO>(cubeModel.m_meshes[0].indices);  //initialise with IBO
+	cubeVAO->addVertexBuffer(cubeModel.m_meshes[0].vertices, cubeLayout); 
 
 	std::shared_ptr<Texture> cubeTexture;
 	cubeTexture = std::make_shared<Texture>("./assets/models/whiteCube/letterCube.png");

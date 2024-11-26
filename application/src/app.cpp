@@ -7,8 +7,8 @@
 
 App::App(const WindowProperties& winProps) : Application(winProps)
 {
-	m_layer = std::unique_ptr<Layer>(new StartPoint(m_window));
-	//m_layer = std::unique_ptr<Layer>(new Lab1(m_window));
+	//m_layer = std::unique_ptr<Layer>(new StartPoint(m_window));
+	m_layer = std::unique_ptr<Layer>(new Lab1(m_window));
 }
 
 Application* startApplication()

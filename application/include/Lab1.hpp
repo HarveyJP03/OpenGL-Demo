@@ -1,0 +1,27 @@
+#pragma once
+#include <DemonRenderer.hpp>
+class Lab1 : public Layer
+{
+public:
+	Lab1(GLFWWindowImpl& win);
+private:
+	void onRender() const override;
+	void onUpdate(float timestep) override;
+	void onKeyPressed(KeyPressedEvent& e) override;
+	void onImGUIRender() override;
+private:
+	std::shared_ptr<Scene> m_mainScene;
+
+	Renderer m_mainRenderer;
+	// Actor positions for ease of use and to avoid additonal magic numbers
+	size_t modelIdx;
+	size_t cameraIdx;
+	size_t floorIdx;
+	size_t vampireIdx;
+
+	//Gui
+	glm::vec3 m_colour{ 1.0 };
+	glm::vec3 m_floorColour{ 1.0 };
+	glm::vec3 m_vampireColour{ 1.0 };
+	bool m_wireFrame = false;
+};
