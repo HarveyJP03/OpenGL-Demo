@@ -41,7 +41,8 @@ Lab1::Lab1(GLFWWindowImpl& win) : Layer(win)
 	Actor cube;
 	cube.geometry = cubeVAO;
 	cube.material = cubeMaterial;
-	cube.translation = glm::vec3(3.f, 1.f, -6.f);
+	cube.translation = glm::vec3(0.f, -5.f, -9.f);
+	cube.scale = glm::vec3(0.25f);
 	cube.recalc();
 	modelIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(cube);
@@ -71,7 +72,6 @@ Lab1::Lab1(GLFWWindowImpl& win) : Layer(win)
 
 	std::shared_ptr<Material> floorMaterial;
 	floorMaterial = std::make_shared<Material>(floorShader);
-	floorMaterial->setValue("u_albedoMap", cubeTexture);
 	floorMaterial->setValue("u_albedo", m_floorColour);
 
 	Actor floor;
@@ -126,12 +126,63 @@ Lab1::Lab1(GLFWWindowImpl& win) : Layer(win)
 
 	DirectionalLight dl;
 	dl.direction = glm::normalize(glm::vec3(-0.2, -1.0, -0.5));
+	
+	PointLight pointLight;
+	uint32_t numPointLights = 1;
+	for (int i = 0; i < numPointLights; i++)
+	{
+		pointLight.colour = glm::vec3(1.0f, 1.0f, 1.0f);
+		pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
+		pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
+		m_mainScene->m_pointLights.push_back(pointLight);
+	}
+
 	m_mainScene->m_directionalLights.push_back(dl);
+
+	//Creating Skybox**
+	std::vector<uint32_t> skyboxIndices(skyboxVertices.size() / 3);
+	std::iota(skyboxIndices.begin(), skyboxIndices.end(), 0);
+	
+	std::shared_ptr<VAO> skyBoxVAO;
+	skyBoxVAO = std::make_shared<VAO>(skyboxIndices);
+	skyBoxVAO->addVertexBuffer(skyboxVertices, { { GL_FLOAT, 3 } });
+
+	std::array<const char*, 6> cubeMapPaths =
+	{
+		"./assets/textures/Skybox/right.png",
+		"./assets/textures/Skybox/left.png",
+		"./assets/textures/Skybox/top.png",
+		"./assets/textures/Skybox/bottom.png",
+		"./assets/textures/Skybox/back.png",
+		"./assets/textures/Skybox/front.png",
+	};
+
+	std::shared_ptr<CubeMap> cubeMap;
+	cubeMap = std::make_shared<CubeMap>(cubeMapPaths, false, false);
+
+	ShaderDescription skyboxShaderDesc; //Path to source files and shader type, used to load the shader.
+	skyboxShaderDesc.type = ShaderType::rasterization;
+	skyboxShaderDesc.vertexSrcPath = "./assets/shaders/Lab1/SkyBoxVert.glsl";
+	skyboxShaderDesc.fragmentSrcPath = "./assets/shaders/Lab1/SkyBoxFrag.glsl";
+	std::shared_ptr<Shader> skyboxShader;
+	skyboxShader = std::make_shared<Shader>(skyboxShaderDesc);
+
+	std::shared_ptr<Material> skyBoxMaterial;
+	skyBoxMaterial = std::make_shared<Material>(skyboxShader);
+
+	Actor skyBox;
+	skyBox.geometry = skyBoxVAO;
+	skyBox.material = skyBoxMaterial;
+	skyBoxMaterial->setValue("u_skyBoxView", glm::inverse(skyBox.transform));
+	skyBoxMaterial->setValue("u_skyBox", cubeMap);
+	skyBoxIdx = m_mainScene->m_actors.size();
+	m_mainScene->m_actors.push_back(skyBox);
+
+	//Created SkyBox
 
 	Actor camera;
 	cameraIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(camera);
-
 
 	/*************************
 	*  Main Render PAss
@@ -148,6 +199,13 @@ Lab1::Lab1(GLFWWindowImpl& win) : Layer(win)
 	mainPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
 	mainPass.UBOmanager.setCachedValue("b_lights", "dLight.colour", m_mainScene->m_directionalLights.at(0).colour);
 	mainPass.UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+	
+	for (int i = 0; i < numPointLights; i++)
+	{
+		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+	}
 
 
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(mainPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f), 0.5f);
@@ -171,12 +229,20 @@ void Lab1::onUpdate(float timestep)
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
 
-	auto& directionalLight = m_mainScene->m_directionalLights.at(0);
-	directionalLight.direction = glm::normalize(glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()), 0.0));
-
-	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+	for (int i = 0; i < m_mainScene->m_pointLights.size(); i++)
+	{
+		m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()) * 2, sin(glfwGetTime()) * 3, -9.0f);
+		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()) * 2, sin(glfwGetTime()) *3, -9.0f);
+		
+		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+	}
 
 	m_mainRenderer.getRenderPass(0).drawInWireFrame = m_wireFrame;
+
+	auto& skyBox = m_mainScene->m_actors.at(skyBoxIdx);
+	skyBox.material->setValue("u_skyBoxView", glm::mat4(glm::mat3(m_mainRenderer.getRenderPass(0).camera.view)));
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)

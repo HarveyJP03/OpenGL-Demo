@@ -81,7 +81,7 @@ void main()
 	
 	for(int i = 0; i <numPointLights; i++)
 	{
-		//result += getPointLight(i);
+		result += getPointLight(i);
 	}
 	
 	for(int i = 0; i <numSpotLights; i++)

@@ -85,7 +85,7 @@ void main()
 	
 	for(int i = 0; i <numPointLights; i++)
 	{
-		//result += getPointLight(i);
+		result += getPointLight(i);
 	}
 	
 	for(int i = 0; i <numSpotLights; i++)
@@ -93,7 +93,7 @@ void main()
 		//result += getSpotLight(i);
 	}
 	      
-	colour = vec4(result * u_albedo, 1.0) * texture(u_albedoMap, texCoord) + vec4(albedoColour, 1.0) * specularStrength;
+	colour = vec4(result * u_albedo, 1.0) * texture(u_albedoMap, texCoord);
 }
 
 
@@ -114,7 +114,7 @@ vec3 getDirectionalLight()
 
 vec3 getPointLight(int idx)
 {
-	float ambientStrength = 0.4;
+	float ambientStrength = 0.0;
 	vec3 ambient = ambientStrength * pLights[idx].colour;
 
 	float distance = length(pLights[idx].position - fragmentPos);
