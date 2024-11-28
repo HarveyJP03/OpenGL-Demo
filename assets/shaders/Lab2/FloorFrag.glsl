@@ -52,9 +52,6 @@ layout (std140, binding = 0) uniform b_camera
 uniform sampler2D u_albedoMap;
 uniform vec3 u_albedo;
 
-uniform sampler2D u_specularMap;
-
-
 
 
 vec3 getDirectionalLight() ;
@@ -75,8 +72,6 @@ void main()
     viewDir = normalize(u_viewPos - fragmentPos);
 	normal = normalize(vertexNormal) ;
 	albedoColour = texture(u_albedoMap, texCoord).rgb;
-	specularStrength = texture(u_specularMap, texCoord).r;
-	specularStrength = 0;
 
 
 
@@ -86,7 +81,7 @@ void main()
 	
 	for(int i = 0; i <numPointLights; i++)
 	{
-		result += getPointLight(i);
+		//result += getPointLight(i);
 	}
 	
 	for(int i = 0; i <numSpotLights; i++)
@@ -115,7 +110,7 @@ vec3 getDirectionalLight()
 
 vec3 getPointLight(int idx)
 {
-	float ambientStrength = 0.0;
+	float ambientStrength = 0.4;
 	vec3 ambient = ambientStrength * pLights[idx].colour;
 
 	float distance = length(pLights[idx].position - fragmentPos);

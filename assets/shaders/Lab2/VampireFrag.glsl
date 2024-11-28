@@ -6,6 +6,7 @@ layout(location = 0) out vec4 colour;
 in vec3 vertexNormal;
 in vec3 fragmentPos;
 in vec2 texCoord;
+in mat3 TBN;
 
 
 struct directionalLight
@@ -53,9 +54,7 @@ uniform sampler2D u_albedoMap;
 uniform vec3 u_albedo;
 
 uniform sampler2D u_specularMap;
-
-
-
+uniform sampler2D u_normalMap;
 
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
@@ -65,7 +64,7 @@ vec3 getSpotLight(int idx) ;
 //global vars
 vec3 normal ;
 vec3 albedoColour ;
-float specularStrength  = 0.8 ;
+float specularStrength  = 0.0f ;
 vec3 viewDir ;
 
 
@@ -75,9 +74,12 @@ void main()
     viewDir = normalize(u_viewPos - fragmentPos);
 	normal = normalize(vertexNormal) ;
 	albedoColour = texture(u_albedoMap, texCoord).rgb;
-	specularStrength = texture(u_specularMap, texCoord).r;
-	specularStrength = 0;
+	specularStrength = texture(u_specularMap, texCoord).r;;
 
+	vec3 n = texture(u_normalMap, texCoord).rgb;
+	n = n * 2.0 - 1.0;
+	n = normalize(TBN * n);
+	normal = n;
 
 
 	// light casters
@@ -100,7 +102,7 @@ void main()
 
 vec3 getDirectionalLight()
 {
-	float ambientStrength = 0.9;
+	float ambientStrength = 0.0;
 	vec3 ambient = ambientStrength * dLight.colour ;
 
 	float diffuseFactor = max(dot(normal, -dLight.direction), 0.0);
@@ -110,7 +112,7 @@ vec3 getDirectionalLight()
 	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
     vec3 specular = dLight.colour * specularFactor * specularStrength;
 
-	return specular + (diffuse + specular);
+	return ambient + diffuse + specular;
 }
 
 vec3 getPointLight(int idx)
@@ -136,7 +138,7 @@ vec3 getSpotLight(int idx)
 {	
 	vec3 lightDir = normalize(sLights[idx].position - fragmentPos);
 	float theta = dot(lightDir, normalize(-sLights[idx].direction));
-	float ambientStrength = 0.4 ;
+	float ambientStrength = 0.0 ;
 	vec3 ambient = ambientStrength * sLights[idx].colour;
 
 	if(theta > sLights[idx].outerCutOff)
