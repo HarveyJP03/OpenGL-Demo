@@ -198,8 +198,10 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	cameraIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(camera);
 
+
+
 	/*************************
-	*  Main Render PAss
+	*  Main Render Pass
 	**************************/
 
 	FBOLayout typicalLayout =
@@ -207,7 +209,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 		{AttachmentType::ColourHDR, true}, //bool = can be sampled?
 		{AttachmentType::Depth, false}
 	};
-
+	
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
@@ -232,8 +234,56 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(mainPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f), 0.5f);
 	m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(mainPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 
-
 	m_mainRenderer.addRenderPass(mainPass);
+
+	m_screenScene.reset(new Scene);
+	float width = m_winRef.getWidthf();
+	float height = m_winRef.getHeightf();
+
+	const std::vector<float> screenVertices =
+	{
+		//position					UV
+		0.0f,  0.0f,   0.0f,   0.0f, 1.0f, //bleft
+		width, 0.0f,   0.0f,   1.0f, 1.0f, //bright
+		width, height, 0.0f,   1.0f, 0.0f, //trigh
+		0.0f,  height, 0.0f,   0.0f, 0.0f  //tleft
+	};
+
+	//Setup VAO
+	VBOLayout screenQuadLayout = { {GL_FLOAT, 3}, { GL_FLOAT, 2} };
+	const std::vector<uint32_t> screenIndices = { 0, 1, 2, 2, 3, 0 };
+	std::shared_ptr<VAO> screenQuadVAO;
+	screenQuadVAO = std::make_shared<VAO>(screenIndices);
+	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
+
+	//Setup Shaders
+	ShaderDescription screenShaderDesc; //Path to source files and shader type, used to load the shader.
+	screenShaderDesc.type = ShaderType::rasterization;
+	screenShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
+	screenShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/ScreenFrag.glsl";
+	std::shared_ptr<Shader> screenShader;
+	screenShader = std::make_shared<Shader>(screenShaderDesc);
+
+	std::shared_ptr<Material> screenQuadMaterial;
+	screenQuadMaterial = std::make_shared<Material>(screenShader);
+	screenQuadMaterial->setValue("u_inputTexture", mainPass.target->getTarget(0)); //ScreenQuad shader simply reads from the texture, which is the FBO we set the main pass to draw to
+	
+	Actor screen;
+	screen.geometry = screenQuadVAO;
+	screen.material = screenQuadMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass screenPass;
+	screenPass.scene = m_screenScene;
+	screenPass.parseScene(); //sorts UBOs for each actor
+	screenPass.target = std::make_shared<FBO>(); //Default FBO, the screenPass is where we draw to the screen
+	screenPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	screenPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	screenPass.UBOmanager.setCachedValue("b_camera2D", "u_view", screenPass.camera.view);
+	screenPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", screenPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(screenPass);
 
 }
 

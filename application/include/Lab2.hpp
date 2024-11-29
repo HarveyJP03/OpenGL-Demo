@@ -11,6 +11,7 @@ private:
 	void onImGUIRender() override;
 private:
 	std::shared_ptr<Scene> m_mainScene;
+	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
@@ -19,6 +20,7 @@ private:
 	size_t floorIdx;
 	size_t vampireIdx;
 	size_t skyBoxIdx;
+	size_t screenIdx;
 
 	std::vector<float> skyboxVertices = {
 		// positions          
