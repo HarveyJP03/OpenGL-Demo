@@ -201,10 +201,18 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	/*************************
 	*  Main Render PAss
 	**************************/
+
+	FBOLayout typicalLayout =
+	{
+		{AttachmentType::ColourHDR, true}, //bool = can be sampled?
+		{AttachmentType::Depth, false}
+	};
+
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
-	mainPass.target = std::make_shared<FBO>(); ;
+	//mainPass.target = std::make_shared<FBO>(); ;
+	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
 	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
