@@ -140,15 +140,16 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	DirectionalLight dl;
 	dl.direction = glm::normalize(glm::vec3(0.2, -1.0, -0.5));
+	dl.colour = glm::vec3(0.25f);
 	m_mainScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
 	uint32_t numPointLights = 1;
 	for (int i = 0; i < numPointLights; i++)
 	{
-		pointLight.colour = glm::vec3(1.0f, 1.0f, 1.0f);
+		pointLight.colour = glm::vec3(0.0f, 1.0f, 0.5f);
 		pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
-		pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
+		pointLight.constants = glm::vec3(1.0f, 0.7f, 1.8f);
 		m_mainScene->m_pointLights.push_back(pointLight);
 	}
 
@@ -236,6 +237,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(mainPass);
 
+	//Set up Screen Pass
 	m_screenScene.reset(new Scene);
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
@@ -284,6 +286,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	screenPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", screenPass.camera.projection);
 
 	m_mainRenderer.addRenderPass(screenPass);
+	//Screen Pass Set up
 
 }
 
@@ -302,8 +305,11 @@ void Lab2::onUpdate(float timestep)
 
 	for (int i = 0; i < m_mainScene->m_pointLights.size(); i++)
 	{
-		m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()) * 2, sin(glfwGetTime()) * 3, -9.0f);
-		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()) * 2, sin(glfwGetTime()) * 3, -9.0f);
+		//m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
+		//m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
+
+		m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
+		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 
 		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
 		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
@@ -344,6 +350,14 @@ void Lab2::onImGUIRender()
 	ImGui::ColorEdit3("Cube Colour", (float*)&m_colour);
 	ImGui::ColorEdit3("Floor Colour", (float*)&m_floorColour);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
+
+	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
+	GLuint textureID = m_mainRenderer.getRenderPass(0).target->getTarget(0)->getID();
+	ImVec2 imageSize = ImVec2(256, 256);
+	ImVec2 uv0 = ImVec2(0.0f, 1.0f);
+	ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+	ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
+
 	ImGui::End();
 	ImGui::Render();
 }

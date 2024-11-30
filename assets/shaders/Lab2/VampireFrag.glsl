@@ -130,6 +130,7 @@ vec3 getPointLight(int idx)
 	vec3 H = normalize(-lightDir + viewDir ) ;
 	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
     vec3 specular = pLights[idx].colour * specularFactor * specularStrength;
+	specular = specular * attn;
 	
 	return ambient + diffuse + specular;
 }
