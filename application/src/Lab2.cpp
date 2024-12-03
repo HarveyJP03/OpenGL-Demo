@@ -279,7 +279,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	m_screenScene.reset(new Scene);
 
 
-	//Tint pass
+	//Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
 	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	screen.material = tintMaterial;
 	m_screenScene->m_actors.push_back(screen);
@@ -296,33 +296,35 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(tintPass);
 	m_previousRenderPassIndex++;
+	//Without resetting scene after each pass, it shows black.From using the watch window, it looks like the material at m_actors(0) does not update with screen.material, 
+	//and gets left as it's material when the screen was first pushed to m_actors. --: material in m_actors does not update with Actor Screen even though its passed by reference.
 	m_screenScene.reset(new Scene);
 	//Tint Pass setup
 
 
-	//Sepia Pass
-	std::shared_ptr<Material> sepiaMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab2/SepiaFrag.glsl", sepiaMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	screen.material = sepiaMaterial;
-	m_screenScene->m_actors.push_back(screen);
-	
-	RenderPass sepiaPass;
-	sepiaPass.scene = m_screenScene;
-	sepiaPass.parseScene(); //sorts UBOs for each actor
-	sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
-	sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	////Sepia Pass
+	//std::shared_ptr<Material> sepiaMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab2/SepiaFrag.glsl", sepiaMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//screen.material = sepiaMaterial;
+	//m_screenScene->m_actors.push_back(screen);
+	//
+	//RenderPass sepiaPass;
+	//sepiaPass.scene = m_screenScene;
+	//sepiaPass.parseScene(); //sorts UBOs for each actor
+	//sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	//sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_view", sepiaPass.camera.view);
-	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", sepiaPass.camera.projection);
+	//sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_view", sepiaPass.camera.view);
+	//sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", sepiaPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(sepiaPass);
-	m_previousRenderPassIndex++;
-	m_screenScene.reset(new Scene);
-	//Sepia Pass Setup
+	//m_mainRenderer.addRenderPass(sepiaPass);
+	//m_previousRenderPassIndex++;
+	//m_screenScene.reset(new Scene);
+	////Sepia Pass Setup
 
 
-	//Blur Pass
+	//Blur Pass : Need to comment setting of uBlurRadius in onUpdate if commenting this out
 	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
 	blurMaterial->setValue("u_blurRadius", m_blurRadius);
@@ -343,6 +345,29 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	m_previousRenderPassIndex++;
 	m_screenScene.reset(new Scene);
 	//Blur Pass Completed
+
+
+	//Edge Detection Pass
+	std::shared_ptr<Material> edgeDetectionMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab2/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	screen.material = edgeDetectionMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass edgeDetectionPass;
+	edgeDetectionPass.scene = m_screenScene;
+	edgeDetectionPass.parseScene(); //sorts UBOs for each actor
+	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout);
+	edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_view", edgeDetectionPass.camera.view);
+	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", edgeDetectionPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(edgeDetectionPass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Edge Detection Pass completed
 
 
 	//Vignette Pass

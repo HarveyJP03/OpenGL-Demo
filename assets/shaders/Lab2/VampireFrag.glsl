@@ -84,7 +84,7 @@ void main()
 
 	// light casters
 
-	//result += getDirectionalLight();
+	result += getDirectionalLight();
 	
 	for(int i = 0; i < numPointLights; i++)
 	{
