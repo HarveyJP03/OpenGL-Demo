@@ -10,12 +10,16 @@ private:
 	void onKeyPressed(KeyPressedEvent& e) override;
 	void onImGUIRender() override;
 private:
+
+	void SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex); //Create shader and add to material passed in, set u_inputTexture
 	std::shared_ptr<Scene> m_mainScene;
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 
 	//In header, as needs to be accessed from update() to set the colour through ImGui
 	std::shared_ptr<Material> tintMaterial;
 	std::shared_ptr<Material> blurMaterial;
+
+	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers

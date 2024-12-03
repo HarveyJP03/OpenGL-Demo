@@ -252,6 +252,8 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(mainPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 
 	m_mainRenderer.addRenderPass(mainPass);
+	m_previousRenderPassIndex++;
+	//Main Pass set up
 
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
@@ -270,24 +272,15 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<VAO> screenQuadVAO;
 	screenQuadVAO = std::make_shared<VAO>(screenIndices);
 	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
-
+	Actor screen;
+	screen.geometry = screenQuadVAO;
 
 	//For Post processing render passes, use screen (quad) as input texture
 	m_screenScene.reset(new Scene);
-	Actor screen;
 
-	////Setup Shaders
-	ShaderDescription tintShaderDesc; //Path to source files and shader type, used to load the shader.
-	tintShaderDesc.type = ShaderType::rasterization;
-	tintShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
-	tintShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/TintFrag.glsl";
-	std::shared_ptr<Shader> tintShader;
-	tintShader = std::make_shared<Shader>(tintShaderDesc);
 
-	tintMaterial = std::make_shared<Material>(tintShader);;
-	tintMaterial->setValue("u_inputTexture", mainPass.target->getTarget(0)); //simply reads from the texture, which is the FBO we set the main pass to draw to
-
-	screen.geometry = screenQuadVAO;
+	//Tint pass
+	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	screen.material = tintMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -302,23 +295,37 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	tintPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", tintPass.camera.projection);
 
 	m_mainRenderer.addRenderPass(tintPass);
+	m_previousRenderPassIndex++;
 	m_screenScene.reset(new Scene);
+	//Tint Pass setup
 
-	//Setup Shaders
-	ShaderDescription blurShaderDesc; //Path to source files and shader type, used to load the shader.
-	blurShaderDesc.type = ShaderType::rasterization;
-	blurShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
-	blurShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/BlurFrag.glsl";
-	std::shared_ptr<Shader> blurShader;
-	blurShader = std::make_shared<Shader>(blurShaderDesc);
 
-	blurMaterial = std::make_shared<Material>(blurShader);
-	blurMaterial->setValue("u_inputTexture", tintPass.target->getTarget(0)); //simply reads from the texture, which is the FBO we set the main pass to draw to
-	glm::vec2 screenSize = glm::vec2(width, height);
-	blurMaterial->setValue("u_screenSize", screenSize); //simply reads from the texture, which is the FBO we set the main pass to draw to
-	blurMaterial->setValue("u_blurRadius", m_blurRadius); //simply reads from the texture, which is the FBO we set the main pass to draw to
+	//Sepia Pass
+	std::shared_ptr<Material> sepiaMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab2/SepiaFrag.glsl", sepiaMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	screen.material = sepiaMaterial;
+	m_screenScene->m_actors.push_back(screen);
 	
-	screen.geometry = screenQuadVAO;
+	RenderPass sepiaPass;
+	sepiaPass.scene = m_screenScene;
+	sepiaPass.parseScene(); //sorts UBOs for each actor
+	sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_view", sepiaPass.camera.view);
+	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", sepiaPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(sepiaPass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Sepia Pass Setup
+
+
+	//Blur Pass
+	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	blurMaterial->setValue("u_blurRadius", m_blurRadius);
 	screen.material = blurMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -333,22 +340,36 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
 
 	m_mainRenderer.addRenderPass(blurPass);
+	m_previousRenderPassIndex++;
 	m_screenScene.reset(new Scene);
+	//Blur Pass Completed
 
 
-	//Setup Shaders
-	ShaderDescription screenShaderDesc; //Path to source files and shader type, used to load the shader.
-	screenShaderDesc.type = ShaderType::rasterization;
-	screenShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
-	screenShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/ScreenFrag.glsl";
-	std::shared_ptr<Shader> screenShader;
-	screenShader = std::make_shared<Shader>(screenShaderDesc);
+	//Vignette Pass
+	std::shared_ptr<Material> vignetteMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab2/VignetteFrag.glsl", vignetteMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	screen.material = vignetteMaterial;
+	m_screenScene->m_actors.push_back(screen);
 
+	RenderPass vignettePass;
+	vignettePass.scene = m_screenScene;
+	vignettePass.parseScene(); //sorts UBOs for each actor
+	vignettePass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout);
+	vignettePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	vignettePass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	vignettePass.UBOmanager.setCachedValue("b_camera2D", "u_view", vignettePass.camera.view);
+	vignettePass.UBOmanager.setCachedValue("b_camera2D", "u_projection", vignettePass.camera.projection);
+
+	m_mainRenderer.addRenderPass(vignettePass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Vignette Pass completed
+
+
+	//Screen Pass
 	std::shared_ptr<Material> screenQuadMaterial;
-	screenQuadMaterial = std::make_shared<Material>(screenShader);
-	screenQuadMaterial->setValue("u_inputTexture", blurPass.target->getTarget(0)); //ScreenQuad shader simply reads from the texture, which is the FBO we set the main pass to draw to
-	
-	screen.geometry = screenQuadVAO;
+	SetUpPPMaterial("./assets/shaders/Lab2/ScreenFrag.glsl", screenQuadMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	screen.material = screenQuadMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -438,6 +459,20 @@ void Lab2::onImGUIRender()
 
 	ImGui::End();
 	ImGui::Render();
+}
+
+void Lab2::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
+{
+	//Tint pass
+	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
+	shaderDesc.type = ShaderType::rasterization;
+	shaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
+	shaderDesc.fragmentSrcPath = fragPath;
+	std::shared_ptr<Shader> shader;
+	shader = std::make_shared<Shader>(shaderDesc);
+
+	mat = std::make_shared<Material>(shader);
+	mat->setValue("u_inputTexture", inputTex); //simply reads from the texture, which is the FBO we set the main pass to draw to
 }
 
 void Lab2::onKeyPressed(KeyPressedEvent& e)
