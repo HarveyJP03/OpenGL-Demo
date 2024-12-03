@@ -31,7 +31,7 @@ struct spotLight
 	float outerCutOff;
 };
 
-const int numPointLights = 1;
+const int numPointLights = 6;
 const int numSpotLights = 1;
 
 layout (std140, binding = 1) uniform b_lights
@@ -110,7 +110,7 @@ vec3 getDirectionalLight()
 
 vec3 getPointLight(int idx)
 {
-	float ambientStrength = 0.4;
+	float ambientStrength = 0.0;
 	vec3 ambient = ambientStrength * pLights[idx].colour;
 
 	float distance = length(pLights[idx].position - fragmentPos);

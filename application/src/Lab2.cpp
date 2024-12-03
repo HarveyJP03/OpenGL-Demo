@@ -11,6 +11,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 {
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
+
 	ShaderDescription phongShaderDesc; //Path to source files and shader type, used to load the shader.
 	phongShaderDesc.type = ShaderType::rasterization;
 	phongShaderDesc.vertexSrcPath = "./assets/shaders/PhongVert.glsl";
@@ -47,6 +48,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	modelIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(cube);
 
+
 	//** Creating Floor
 	std::shared_ptr<Grid> grid = std::make_shared<Grid>();
 	std::vector<float> floor_vertices = grid->getVertices();
@@ -77,11 +79,12 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	Actor floor;
 	floor.geometry = gridVAO;
 	floor.material = floorMaterial;
-	floor.translation = glm::vec3(-50.0f, -15.f, -50.0f);
+	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
 	floor.recalc();
 	floorIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(floor);
 	//** Floor Created
+
 
 	//**Creating Vampire
 	ShaderDescription vampireShaderDesc; //Path to source files and shader type, used to load the shader.
@@ -144,12 +147,26 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
-	uint32_t numPointLights = 1;
+	uint32_t numPointLights = 6;
+
+	glm::vec3 positions[2] = { glm::vec3(0.0f, -5.f, 10.0f), glm::vec3(0.0f, -5.f, -9.0f) };
+	glm::vec3 colours[2] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.f, 1.0f) };
 	for (int i = 0; i < numPointLights; i++)
 	{
-		pointLight.colour = glm::vec3(0.0f, 1.0f, 0.5f);
-		pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
-		pointLight.constants = glm::vec3(1.0f, 0.7f, 1.8f);
+		if (i == 0)
+		{
+			pointLight.colour = colours[i];
+			pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
+			pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
+		}
+
+		else
+		{
+			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
+			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-10.0, 10.0) , -4.0f, Randomiser::uniformFloatBetween(-10.0, 5.0));
+			pointLight.constants = glm::vec3(1.0f, 0.14f, 0.07f);
+		}
+
 		m_mainScene->m_pointLights.push_back(pointLight);
 	}
 
@@ -227,9 +244,9 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	for (int i = 0; i < numPointLights; i++)
 	{
-		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
-		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
-		mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+		bool passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
 	}
 
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(mainPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f), 0.5f);
@@ -237,11 +254,8 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(mainPass);
 
-	//Set up Screen Pass
-	m_screenScene.reset(new Scene);
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
-
 	const std::vector<float> screenVertices =
 	{
 		//position					UV
@@ -258,6 +272,71 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	screenQuadVAO = std::make_shared<VAO>(screenIndices);
 	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
 
+
+	//For Post processing render passes, use screen (quad) as input texture
+	m_screenScene.reset(new Scene);
+	Actor screen;
+
+	////Setup Shaders
+	ShaderDescription tintShaderDesc; //Path to source files and shader type, used to load the shader.
+	tintShaderDesc.type = ShaderType::rasterization;
+	tintShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
+	tintShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/TintFrag.glsl";
+	std::shared_ptr<Shader> tintShader;
+	tintShader = std::make_shared<Shader>(tintShaderDesc);
+
+	tintMaterial = std::make_shared<Material>(tintShader);;
+	tintMaterial->setValue("u_inputTexture", mainPass.target->getTarget(0)); //simply reads from the texture, which is the FBO we set the main pass to draw to
+
+	screen.geometry = screenQuadVAO;
+	screen.material = tintMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass tintPass;
+	tintPass.scene = m_screenScene;
+	tintPass.parseScene(); //sorts UBOs for each actor
+	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	tintPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	tintPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	tintPass.UBOmanager.setCachedValue("b_camera2D", "u_view", tintPass.camera.view);
+	tintPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", tintPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(tintPass);
+	m_screenScene.reset(new Scene);
+
+	//Setup Shaders
+	ShaderDescription blurShaderDesc; //Path to source files and shader type, used to load the shader.
+	blurShaderDesc.type = ShaderType::rasterization;
+	blurShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
+	blurShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/BlurFrag.glsl";
+	std::shared_ptr<Shader> blurShader;
+	blurShader = std::make_shared<Shader>(blurShaderDesc);
+
+	blurMaterial = std::make_shared<Material>(blurShader);
+	blurMaterial->setValue("u_inputTexture", tintPass.target->getTarget(0)); //simply reads from the texture, which is the FBO we set the main pass to draw to
+	glm::vec2 screenSize = glm::vec2(width, height);
+	blurMaterial->setValue("u_screenSize", screenSize); //simply reads from the texture, which is the FBO we set the main pass to draw to
+	blurMaterial->setValue("u_blurRadius", 0.75f); //simply reads from the texture, which is the FBO we set the main pass to draw to
+	
+	screen.geometry = screenQuadVAO;
+	screen.material = blurMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass blurPass;
+	blurPass.scene = m_screenScene;
+	blurPass.parseScene(); //sorts UBOs for each actor
+	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_view", blurPass.camera.view);
+	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(blurPass);
+	m_screenScene.reset(new Scene);
+
+
 	//Setup Shaders
 	ShaderDescription screenShaderDesc; //Path to source files and shader type, used to load the shader.
 	screenShaderDesc.type = ShaderType::rasterization;
@@ -268,9 +347,8 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	std::shared_ptr<Material> screenQuadMaterial;
 	screenQuadMaterial = std::make_shared<Material>(screenShader);
-	screenQuadMaterial->setValue("u_inputTexture", mainPass.target->getTarget(0)); //ScreenQuad shader simply reads from the texture, which is the FBO we set the main pass to draw to
+	screenQuadMaterial->setValue("u_inputTexture", blurPass.target->getTarget(0)); //ScreenQuad shader simply reads from the texture, which is the FBO we set the main pass to draw to
 	
-	Actor screen;
 	screen.geometry = screenQuadVAO;
 	screen.material = screenQuadMaterial;
 	m_screenScene->m_actors.push_back(screen);
@@ -287,7 +365,6 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(screenPass);
 	//Screen Pass Set up
-
 }
 
 void Lab2::onRender() const
@@ -303,12 +380,9 @@ void Lab2::onUpdate(float timestep)
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
 
-	for (int i = 0; i < m_mainScene->m_pointLights.size(); i++)
+	for (int i = 0; i < 6; i++)
 	{
-		//m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
-		//m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
-
-		m_mainScene->m_pointLights.at(i).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
+		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 
 		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
@@ -321,6 +395,9 @@ void Lab2::onUpdate(float timestep)
 
 	auto& skyBox = m_mainScene->m_actors.at(skyBoxIdx);
 	skyBox.material->setValue("u_skyBoxView", glm::mat4(glm::mat3(m_mainRenderer.getRenderPass(0).camera.view)));
+
+	tintMaterial->setValue("u_tintColour", m_tintColour);
+	//blurMaterial->setValue("u_blurRadius", cos(glfwGetTime()));
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
@@ -349,6 +426,7 @@ void Lab2::onImGUIRender()
 	ImGui::Text("FPS %.3f ms/frame (%.1f FPS)", ms, ImGui::GetIO().Framerate);  // display FPS and ms
 	ImGui::ColorEdit3("Cube Colour", (float*)&m_colour);
 	ImGui::ColorEdit3("Floor Colour", (float*)&m_floorColour);
+	ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision

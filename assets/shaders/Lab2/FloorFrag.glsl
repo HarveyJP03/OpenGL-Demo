@@ -31,7 +31,7 @@ struct spotLight
 	float outerCutOff;
 };
 
-const int numPointLights = 1;
+const int numPointLights = 6;
 const int numSpotLights = 1;
 
 layout (std140, binding = 1) uniform b_lights
@@ -77,11 +77,11 @@ void main()
 
 	// light casters
 
-	result += getDirectionalLight();
+	//result += getDirectionalLight();
 	
 	for(int i = 0; i <numPointLights; i++)
 	{
-		//result += getPointLight(i);
+		result += getPointLight(i);
 	}
 	
 	for(int i = 0; i <numSpotLights; i++)
@@ -110,7 +110,7 @@ vec3 getDirectionalLight()
 
 vec3 getPointLight(int idx)
 {
-	float ambientStrength = 0.4;
+	float ambientStrength = 0.0;
 	vec3 ambient = ambientStrength * pLights[idx].colour;
 
 	float distance = length(pLights[idx].position - fragmentPos);
@@ -120,9 +120,10 @@ vec3 getPointLight(int idx)
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = diff * attn * pLights[idx].colour;
 
-	vec3 H = normalize(-lightDir + viewDir ) ;
-	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
-    vec3 specular = pLights[idx].colour * specularFactor * specularStrength;
+	vec3 H = normalize(lightDir + viewDir ) ;
+	float specularFactor = pow(max(dot(normal, H) , 0.0), 2) ;
+	vec3 specular = pLights[idx].colour * specularFactor * specularStrength;
+	specular = specular * attn;
 	
 	return ambient + diffuse + specular;
 }

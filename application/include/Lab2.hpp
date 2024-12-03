@@ -13,6 +13,10 @@ private:
 	std::shared_ptr<Scene> m_mainScene;
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 
+	//In header, as needs to be accessed from update() to set the colour through ImGui
+	std::shared_ptr<Material> tintMaterial;
+	std::shared_ptr<Material> blurMaterial;
+
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
 	size_t modelIdx;
@@ -70,5 +74,6 @@ private:
 	glm::vec3 m_colour{ 1.0 };
 	glm::vec3 m_floorColour{ glm::vec3(0.2, 0.3, 0.4f) };
 	glm::vec3 m_vampireColour{ 1.0 };
+	glm::vec3 m_tintColour{ 0.0 };
 	bool m_wireFrame = false;
 };
