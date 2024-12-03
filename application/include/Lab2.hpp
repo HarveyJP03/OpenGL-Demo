@@ -75,5 +75,6 @@ private:
 	glm::vec3 m_floorColour{ glm::vec3(0.2, 0.3, 0.4f) };
 	glm::vec3 m_vampireColour{ 1.0 };
 	glm::vec3 m_tintColour{ 0.0 };
+	float m_blurRadius = 0.0f;
 	bool m_wireFrame = false;
 };

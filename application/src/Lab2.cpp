@@ -149,13 +149,12 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	PointLight pointLight;
 	uint32_t numPointLights = 6;
 
-	glm::vec3 positions[2] = { glm::vec3(0.0f, -5.f, 10.0f), glm::vec3(0.0f, -5.f, -9.0f) };
-	glm::vec3 colours[2] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.f, 1.0f) };
+
 	for (int i = 0; i < numPointLights; i++)
 	{
 		if (i == 0)
 		{
-			pointLight.colour = colours[i];
+			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
 			pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
 			pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
 		}
@@ -317,7 +316,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	blurMaterial->setValue("u_inputTexture", tintPass.target->getTarget(0)); //simply reads from the texture, which is the FBO we set the main pass to draw to
 	glm::vec2 screenSize = glm::vec2(width, height);
 	blurMaterial->setValue("u_screenSize", screenSize); //simply reads from the texture, which is the FBO we set the main pass to draw to
-	blurMaterial->setValue("u_blurRadius", 0.75f); //simply reads from the texture, which is the FBO we set the main pass to draw to
+	blurMaterial->setValue("u_blurRadius", m_blurRadius); //simply reads from the texture, which is the FBO we set the main pass to draw to
 	
 	screen.geometry = screenQuadVAO;
 	screen.material = blurMaterial;
@@ -397,7 +396,7 @@ void Lab2::onUpdate(float timestep)
 	skyBox.material->setValue("u_skyBoxView", glm::mat4(glm::mat3(m_mainRenderer.getRenderPass(0).camera.view)));
 
 	tintMaterial->setValue("u_tintColour", m_tintColour);
-	//blurMaterial->setValue("u_blurRadius", cos(glfwGetTime()));
+	blurMaterial->setValue("u_blurRadius", m_blurRadius);
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
@@ -427,6 +426,7 @@ void Lab2::onImGUIRender()
 	ImGui::ColorEdit3("Cube Colour", (float*)&m_colour);
 	ImGui::ColorEdit3("Floor Colour", (float*)&m_floorColour);
 	ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
+	ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
