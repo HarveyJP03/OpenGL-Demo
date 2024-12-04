@@ -141,6 +141,17 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_actors.push_back(vampire);
 	//**Vampire Created
 
+	for (int i = 0; i < 30; i++)
+	{
+		Actor vamp;
+		vamp.geometry = vampireVAO;
+		vamp.material = vampireMaterial;
+		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-6.0, -50.0));
+		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
+		vamp.recalc();
+		m_mainScene->m_actors.push_back(vamp);
+	}
+
 	DirectionalLight dl;
 	dl.direction = glm::normalize(glm::vec3(0.2, -1.0, -0.5));
 	dl.colour = glm::vec3(0.25f);
@@ -238,7 +249,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	mainPass.parseScene();
 	//mainPass.target = std::make_shared<FBO>(); ;
 	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
-	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.f);
+	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
 	mainPass.UBOmanager.setCachedValue("b_camera", "u_view", mainPass.camera.view);
@@ -285,6 +296,29 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	//For Post processing render passes, use screen (quad) as input texture
 	m_screenScene.reset(new Scene);
 
+
+	//Depth Render Pass
+	std::shared_ptr<Material> depthRenderMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(1)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
+	screen.material = depthRenderMaterial;
+	m_screenScene->m_actors.push_back(screen);
+	
+	RenderPass depthRenderPass;
+	depthRenderPass.scene = m_screenScene;
+	depthRenderPass.parseScene(); //sorts UBOs for each actor
+	depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", depthRenderPass.camera.view);
+	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", depthRenderPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(depthRenderPass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Depth Render Pass Setup
+
+
 	//Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
 	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	screen.material = tintMaterial;
@@ -316,7 +350,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	//RenderPass sepiaPass;
 	//sepiaPass.scene = m_screenScene;
 	//sepiaPass.parseScene(); //sorts UBOs for each actor
-	//sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	//sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	//sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	//sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -352,27 +386,27 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	//Blur Pass Completed
 
 
-	//Edge Detection Pass
-	std::shared_ptr<Material> edgeDetectionMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab2/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
-	screen.material = edgeDetectionMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Edge Detection Pass : Need to comment setting of u_edgeStrength in onUpdate if commenting this out
+	//SetUpPPMaterial("./assets/shaders/Lab3/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	//edgeDetectionMaterial->setValue("u_edgeStrength", m_edgeStrength);
+	//screen.material = edgeDetectionMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass edgeDetectionPass;
-	edgeDetectionPass.scene = m_screenScene;
-	edgeDetectionPass.parseScene(); //sorts UBOs for each actor
-	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
-	edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass edgeDetectionPass;
+	//edgeDetectionPass.scene = m_screenScene;
+	//edgeDetectionPass.parseScene(); //sorts UBOs for each actor
+	//edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
+	//edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_view", edgeDetectionPass.camera.view);
-	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", edgeDetectionPass.camera.projection);
+	//edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_view", edgeDetectionPass.camera.view);
+	//edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", edgeDetectionPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(edgeDetectionPass);
-	m_previousRenderPassIndex++;
-	m_screenScene.reset(new Scene);
-	//Edge Detection Pass completed
+	//m_mainRenderer.addRenderPass(edgeDetectionPass);
+	//m_previousRenderPassIndex++;
+	//m_screenScene.reset(new Scene);
+	////Edge Detection Pass completed
 
 
 	//Vignette Pass
@@ -448,6 +482,7 @@ void Lab3::onUpdate(float timestep)
 
 	tintMaterial->setValue("u_tintColour", m_tintColour);
 	blurMaterial->setValue("u_blurRadius", m_blurRadius);
+	//edgeDetectionMaterial->setValue("u_edgeStrength", m_edgeStrength);
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
@@ -476,6 +511,7 @@ void Lab3::onImGUIRender()
 	ImGui::ColorEdit3("Floor Colour", (float*)&m_floorColour);
 	ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
 	ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
+	ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision

@@ -118,7 +118,7 @@ vec3 getDirectionalLight()
 vec3 getPointLight(int idx)
 {
 
-	float ambientStrength = 0.01;
+	float ambientStrength = 0.0;
 	vec3 ambient = ambientStrength * pLights[idx].colour;
 
 	float distance = length(pLights[idx].position - fragmentPos);

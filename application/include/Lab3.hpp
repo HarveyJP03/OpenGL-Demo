@@ -18,6 +18,8 @@ private:
 	//In header, as needs to be accessed from update() to set the colour through ImGui
 	std::shared_ptr<Material> tintMaterial;
 	std::shared_ptr<Material> blurMaterial;
+	std::shared_ptr<Material> edgeDetectionMaterial;
+	float m_edgeStrength = 0.25f;
 
 	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
 
