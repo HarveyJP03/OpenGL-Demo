@@ -30,7 +30,7 @@ void main()
 	float edgeVertical = abs(lumUp - lumDown); //Abs makes the number not negative
 	float edgeStrength = max(edgeHorizontal, edgeVertical); //edgeStrength = largest from two values
 
-	if(edgeStrength > 0.25f && !isEdgeOfScreen())
+	if(edgeStrength > 0.25f) //GL_CLAMP_TO_EDGE in texture.cpp init fixes, may need undoing if other textures break
 	{
 		colour = vec3(0.0f);
 	}
@@ -41,7 +41,6 @@ void main()
 //If pixel is on the edge of screen, dont apply edgeStrength coluring, since I assume the UV wraps and assumes pixel at the top of screen is one above one at bottom
 bool isEdgeOfScreen()
 {
-	
 	if(texCoord.y >= 0.001f && texCoord.y <= 0.999f && texCoord.x >= 0.001f && texCoord.x <= 0.999f)
 	{
 		return false;

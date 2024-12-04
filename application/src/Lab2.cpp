@@ -221,17 +221,23 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	*  Main Render Pass
 	**************************/
 
-	FBOLayout typicalLayout =
+	FBOLayout colourLayout =
 	{
 		{AttachmentType::ColourHDR, true}, //bool = can be sampled?
 		{AttachmentType::Depth, false}
+	};
+
+	FBOLayout colourAndDepthLayout =
+	{
+		{AttachmentType::ColourHDR, true},
+		{AttachmentType::Depth, true}
 	};
 	
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
 	//mainPass.target = std::make_shared<FBO>(); ;
-	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
 	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
@@ -273,11 +279,11 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	screenQuadVAO = std::make_shared<VAO>(screenIndices);
 	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
 	Actor screen;
+	//std::shared_ptr<Actor> screen = std::make_shared<Actor>(quad);
 	screen.geometry = screenQuadVAO;
 
 	//For Post processing render passes, use screen (quad) as input texture
 	m_screenScene.reset(new Scene);
-
 
 	//Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
 	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
@@ -287,7 +293,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	RenderPass tintPass;
 	tintPass.scene = m_screenScene;
 	tintPass.parseScene(); //sorts UBOs for each actor
-	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	tintPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	tintPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -296,8 +302,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(tintPass);
 	m_previousRenderPassIndex++;
-	//Without resetting scene after each pass, it shows black.From using the watch window, it looks like the material at m_actors(0) does not update with screen.material, 
-	//and gets left as it's material when the screen was first pushed to m_actors. --: material in m_actors does not update with Actor Screen even though its passed by reference.
+	//Without resetting scene after each pass, it shows black
 	m_screenScene.reset(new Scene);
 	//Tint Pass setup
 
@@ -334,7 +339,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	RenderPass blurPass;
 	blurPass.scene = m_screenScene;
 	blurPass.parseScene(); //sorts UBOs for each actor
-	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout); //Target is custom FBO
+	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -357,7 +362,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	RenderPass edgeDetectionPass;
 	edgeDetectionPass.scene = m_screenScene;
 	edgeDetectionPass.parseScene(); //sorts UBOs for each actor
-	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout);
+	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
 	edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -379,7 +384,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	RenderPass vignettePass;
 	vignettePass.scene = m_screenScene;
 	vignettePass.parseScene(); //sorts UBOs for each actor
-	vignettePass.target = std::make_shared<FBO>(m_winRef.getSize(), typicalLayout);
+	vignettePass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
 	vignettePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	vignettePass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -498,6 +503,31 @@ void Lab2::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat,
 
 	mat = std::make_shared<Material>(shader);
 	mat->setValue("u_inputTexture", inputTex); //simply reads from the texture, which is the FBO we set the main pass to draw to
+}
+
+Actor Lab2::CreateScreenActor()
+{
+	float width = m_winRef.getWidthf();
+	float height = m_winRef.getHeightf();
+	const std::vector<float> screenVertices =
+	{
+		//position					UV
+		0.0f,  0.0f,   0.0f,   0.0f, 1.0f, //bleft
+		width, 0.0f,   0.0f,   1.0f, 1.0f, //bright
+		width, height, 0.0f,   1.0f, 0.0f, //trigh
+		0.0f,  height, 0.0f,   0.0f, 0.0f  //tleft
+	};
+
+	//Setup VAO
+	VBOLayout screenQuadLayout = { {GL_FLOAT, 3}, { GL_FLOAT, 2} };
+	const std::vector<uint32_t> screenIndices = { 0, 1, 2, 2, 3, 0 };
+	std::shared_ptr<VAO> screenQuadVAO;
+	screenQuadVAO = std::make_shared<VAO>(screenIndices);
+	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
+	Actor screen;
+	screen.geometry = screenQuadVAO;
+
+	return screen;
 }
 
 void Lab2::onKeyPressed(KeyPressedEvent& e)
