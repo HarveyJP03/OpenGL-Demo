@@ -11,6 +11,7 @@ set (PROJECT_HEADER_FILES
         "application/include/startPoint.hpp"
         "application/include/Lab1.hpp"
         "application/include/Lab2.hpp"
+	"application/include/Lab3.hpp"
         "application/include/grid.hpp"       
 )
 
@@ -19,6 +20,7 @@ set (PROJECT_SOURCE_FILES
         "application/src/startPoint.cpp"
         "application/src/Lab1.cpp"
         "application/src/Lab2.cpp"
+	"application/src/Lab3.cpp"
         "application/src/grid.cpp"
 )
 

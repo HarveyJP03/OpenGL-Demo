@@ -1,13 +1,13 @@
-#include "Lab2.hpp"
+#include "Lab3.hpp"
 #include "scripts/include/camera.hpp"
 #include "scripts/include/rotation.hpp"
 #include <numeric> // For std::iota
 #include <glm/gtc/matrix_transform.hpp>
 #include "Grid.hpp"
-#include "Lab2.hpp"
+#include "Lab3.hpp"
 
 
-Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
+Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 {
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
@@ -162,7 +162,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 		else
 		{
 			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
-			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-10.0, 10.0) , -4.0f, Randomiser::uniformFloatBetween(-10.0, 5.0));
+			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-10.0, 10.0), -4.0f, Randomiser::uniformFloatBetween(-10.0, 5.0));
 			pointLight.constants = glm::vec3(1.0f, 0.14f, 0.07f);
 		}
 
@@ -232,7 +232,7 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 		{AttachmentType::ColourHDR, true},
 		{AttachmentType::Depth, true}
 	};
-	
+
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
@@ -417,11 +417,11 @@ Lab2::Lab2(GLFWWindowImpl& win) : Layer(win)
 	//Screen Pass Set up
 }
 
-void Lab2::onRender() const
+void Lab3::onRender() const
 {
 	m_mainRenderer.render();
 }
-void Lab2::onUpdate(float timestep)
+void Lab3::onUpdate(float timestep)
 {
 	// per frame uniforms
 	auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
@@ -461,12 +461,10 @@ void Lab2::onUpdate(float timestep)
 	pass.camera.updateView(camera.transform);
 	pass.UBOmanager.setCachedValue("b_camera", "u_view", pass.camera.view);
 	pass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
-
-
 }
 
 
-void Lab2::onImGUIRender()
+void Lab3::onImGUIRender()
 {
 	float ms = 1000.0f / ImGui::GetIO().Framerate; ;  //milisecconds
 	ImGui_ImplOpenGL3_NewFrame();
@@ -491,7 +489,7 @@ void Lab2::onImGUIRender()
 	ImGui::Render();
 }
 
-void Lab2::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
+void Lab3::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
 	//Tint pass
 	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
@@ -505,7 +503,7 @@ void Lab2::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat,
 	mat->setValue("u_inputTexture", inputTex); //simply reads from the texture, which is the FBO we set the main pass to draw to
 }
 
-void Lab2::onKeyPressed(KeyPressedEvent& e)
+void Lab3::onKeyPressed(KeyPressedEvent& e)
 {
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
 	{
