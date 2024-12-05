@@ -16,12 +16,14 @@ private:
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 
 	//In header, as needs to be accessed from update() to set the colour through ImGui
-	std::shared_ptr<Material> tintMaterial;
-	std::shared_ptr<Material> blurMaterial;
-	std::shared_ptr<Material> edgeDetectionMaterial;
-	float m_edgeStrength = 0.25f;
+	float m_edgeStrength = 1.0f;
+	float m_fogType = -1.0f;
 
 	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
+	int m_blurPassIndex = -1;
+	int m_tintPassIndex = -1;
+	int m_edgeDetectionPassIndex = -1;
+	int m_fogPassIndex = -1;
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
