@@ -148,7 +148,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_actors.push_back(vampire);
 	//**Vampire Created
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 40; i++)
 	{
 		Actor vamp;
 		vamp.geometry = vampireVAO;
@@ -254,7 +254,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
-	//mainPass.target = std::make_shared<FBO>(); ;
+	//mainPass.target = std::make_shared<FBO>();
 	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
 	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
@@ -444,6 +444,31 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	m_blurPassIndex = m_previousRenderPassIndex;
 	m_screenScene.reset(new Scene);
 	//Blur Pass Completed
+
+
+	//Depth of Field Pass
+	std::shared_ptr<Material> dofMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
+	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); 
+	dofMaterial->setValue("u_depthTexture", m_mainRenderer.getRenderPass(0).target->getTarget(1)); //Main pass has depth buffer attached to target(1).
+	screen.material = dofMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass dofPass;
+	dofPass.scene = m_screenScene;
+	dofPass.parseScene(); //sorts UBOs for each actor
+	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
+	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(dofPass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Depth of Field pass completed
+
 
 	//Vignette Pass
 	std::shared_ptr<Material> vignetteMaterial;
