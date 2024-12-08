@@ -24,6 +24,7 @@ private:
 	int m_tintPassIndex = -1;
 	int m_edgeDetectionPassIndex = -1;
 	int m_fogPassIndex = -1;
+	int m_dofPassIndex = -1;
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
@@ -85,4 +86,5 @@ private:
 	glm::vec3 m_tintColour{ 0.0 };
 	float m_blurRadius = 1.5f;
 	bool m_wireFrame = false;
+	float m_focusDistance = 0.25f;
 };

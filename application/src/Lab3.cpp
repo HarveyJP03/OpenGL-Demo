@@ -165,7 +165,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
-	uint32_t numPointLights = 6;
+	uint32_t numPointLights = 60;
 
 
 	for (int i = 0; i < numPointLights; i++)
@@ -180,7 +180,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 		else
 		{
 			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
-			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-10.0, 10.0), -4.0f, Randomiser::uniformFloatBetween(-10.0, 5.0));
+			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -4.0f, Randomiser::uniformFloatBetween(0.0, -80.0));
 			pointLight.constants = glm::vec3(1.0f, 0.14f, 0.07f);
 		}
 
@@ -451,6 +451,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
 	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); 
 	dofMaterial->setValue("u_depthTexture", m_mainRenderer.getRenderPass(0).target->getTarget(1)); //Main pass has depth buffer attached to target(1).
+	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass has depth buffer attached to target(1).
 	screen.material = dofMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -466,6 +467,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(dofPass);
 	m_previousRenderPassIndex++;
+	m_dofPassIndex = m_previousRenderPassIndex;
 	m_screenScene.reset(new Scene);
 	//Depth of Field pass completed
 
@@ -525,7 +527,7 @@ void Lab3::onUpdate(float timestep)
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
 
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 30; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
@@ -545,6 +547,7 @@ void Lab3::onUpdate(float timestep)
 	if(m_blurPassIndex != -1) m_mainRenderer.getRenderPass(m_blurPassIndex).scene->m_actors.at(0).material->setValue("u_blurRadius", m_blurRadius);
 	if(m_edgeDetectionPassIndex != -1) m_mainRenderer.getRenderPass(m_edgeDetectionPassIndex).scene->m_actors.at(0).material->setValue("u_edgeStrength", m_edgeStrength);
 	if(m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
+	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
 
 
 
@@ -577,6 +580,7 @@ void Lab3::onImGUIRender()
 	if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
+	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision

@@ -7,11 +7,12 @@ in vec2 texCoord;
 uniform sampler2D u_inputTexture; //Non blurred texture
 uniform sampler2D u_blurTexture;  
 uniform sampler2D u_depthTexture;
+uniform float u_focusDistance;
 
 const float near = 0.1f;
 const float far = 20.0f; //Value = distance that gets max blur
 
-const float focusDistance = 0.15f;
+float focusDistance = 0.15f;
 
 float LineariseDepth(float depth);
 
@@ -20,6 +21,8 @@ void main()
 	vec3 colour = texture(u_inputTexture, texCoord).rgb;
 	vec3 blurredColour = texture(u_blurTexture, texCoord).rgb;
 	float depth = texture(u_depthTexture, texCoord).r;
+
+	focusDistance = u_focusDistance;
 	
 	float linearDepth = LineariseDepth(depth);
 	float depthNormalised = linearDepth / far;
