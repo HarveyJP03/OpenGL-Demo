@@ -5,6 +5,7 @@ layout(location = 0) out vec4 colour;
 
 in vec3 vertexNormal;
 in vec3 fragmentPos;
+in vec4 fragPosClipSpace;
 in vec2 texCoord;
 
 
@@ -52,7 +53,7 @@ layout (std140, binding = 0) uniform b_camera
 uniform sampler2D u_albedoMap;
 uniform vec3 u_albedo;
 
-
+uniform sampler2D u_depthMap;
 
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
@@ -66,14 +67,17 @@ float specularStrength  = 0.8 ;
 vec3 viewDir ;
 
 
+bool doesPassDepthTest();
+
+
 void main()
 {
+	if(!doesPassDepthTest()) return;
+	
 	vec3 result = vec3(0.0, 0.0, 0.0); 
     viewDir = normalize(u_viewPos - fragmentPos);
 	normal = normalize(vertexNormal) ;
 	albedoColour = texture(u_albedoMap, texCoord).rgb;
-
-
 
 	// light casters
 
@@ -89,7 +93,20 @@ void main()
 		//result += getSpotLight(i);
 	}
 	      
-	colour = vec4(result * u_albedo, 1.0) * texture(u_albedoMap, texCoord);
+	colour = vec4( result * u_albedo, 1.0) * texture(u_albedoMap, texCoord);
+}
+
+bool doesPassDepthTest()
+{
+	float fragDepth = fragPosClipSpace.z / fragPosClipSpace.w; //Normalise depth from clip space to Normalised Device Coordinates/ [-1, 1]
+	fragDepth = fragDepth * 0.5 + 0.5; //Remap from NDC [-1,1] to [0,1]
+	vec2 fragCoord = (fragPosClipSpace.xy / fragPosClipSpace.w) * 0.5 + 0.5; //frag position in screen space
+	float depthPrePass = texture(u_depthMap, fragCoord).r; //sample depth value at the frag pos in screen space
+
+	float bias = 0.001f;
+	if(fragDepth >= depthPrePass + bias) return false; //Frag depth is deeper than the depth value stored in the depth map
+
+	return true;
 }
 
 

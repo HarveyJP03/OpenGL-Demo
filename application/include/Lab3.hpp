@@ -19,7 +19,7 @@ private:
 	float m_edgeStrength = 1.0f;
 	float m_fogType = -1.0f;
 
-	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
+	int m_previousRenderPassIndex = 0; //To keep track of the index of the last added render pass
 	int m_blurPassIndex = -1;
 	int m_tintPassIndex = -1;
 	int m_edgeDetectionPassIndex = -1;

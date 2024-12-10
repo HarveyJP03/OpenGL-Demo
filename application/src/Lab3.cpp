@@ -12,6 +12,16 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
 
+	VBOLayout depthLayout = { {GL_FLOAT, 3} };
+	//Set Up Depth Only Pass Material
+	ShaderDescription depthShaderDesc;
+	depthShaderDesc.type = ShaderType::rasterization;
+	depthShaderDesc.vertexSrcPath = "./assets/shaders/Lab3/DepthVert.glsl";
+	depthShaderDesc.fragmentSrcPath = "./assets/shaders/Lab3/DepthFrag.glsl";
+	std::shared_ptr<Shader> depthShader = std::make_shared<Shader>(depthShaderDesc);
+	std::shared_ptr<Material> depthPassMaterial = std::make_shared<Material>(depthShader);
+
+
 	ShaderDescription phongShaderDesc; //Path to source files and shader type, used to load the shader.
 	phongShaderDesc.type = ShaderType::rasterization;
 	phongShaderDesc.vertexSrcPath = "./assets/shaders/PhongVert.glsl";
@@ -72,13 +82,19 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	gridVAO = std::make_shared<VAO>(floor_indices);
 	gridVAO->addVertexBuffer(floor_vertices, gridLayout);
 
+	std::shared_ptr<VAO> floorDepthVAO;
+	floorDepthVAO = std::make_shared<VAO>(grid->getIndices());
+	floorDepthVAO->addVertexBuffer(grid->getVertexPositions(), depthLayout);
+
 	std::shared_ptr<Material> floorMaterial;
 	floorMaterial = std::make_shared<Material>(floorShader);
 	floorMaterial->setValue("u_albedo", m_floorColour);
 
 	Actor floor;
 	floor.geometry = gridVAO;
+	floor.depthGeometry = floorDepthVAO;
 	floor.material = floorMaterial;
+	floor.depthMaterial = depthPassMaterial;
 	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
 	floor.recalc();
 	floorIdx = m_mainScene->m_actors.size();
@@ -86,7 +102,9 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 
 	Actor floor2;
 	floor2.geometry = gridVAO;
+	floor2.depthGeometry = floorDepthVAO;
 	floor2.material = floorMaterial;
+	floor2.depthMaterial = depthPassMaterial;
 	floor2.translation = glm::vec3(-50.0f, -5.f, -100.0f);
 	floor2.recalc();
 	m_mainScene->m_actors.push_back(floor2);
@@ -119,8 +137,11 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 
 	std::shared_ptr<VAO> vampireVAO;
 	vampireVAO = std::make_shared<VAO>(vampireModel.m_meshes[0].indices); //Init with IBO
-
 	vampireVAO->addVertexBuffer(vampireModel.m_meshes[0].vertices, vampireLayout); //Add VBO
+
+	std::shared_ptr<VAO> vampireDepthVAO;
+	vampireDepthVAO = std::make_shared<VAO>(vampireModel.m_meshes[0].indices);
+	vampireDepthVAO->addVertexBuffer(vampireModel.m_meshes[0].positions, depthLayout);
 
 	std::shared_ptr<Texture> vampireSpecular;
 	vampireSpecular = std::make_shared<Texture>("./assets/models/Vampire/textures/specular.png");
@@ -140,7 +161,9 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 
 	Actor vampire;
 	vampire.geometry = vampireVAO;
+	vampire.depthGeometry = vampireDepthVAO;
 	vampire.material = vampireMaterial;
+	vampire.depthMaterial = depthPassMaterial;
 	vampire.translation = glm::vec3(0.0f, -5.0f, -11.0f);
 	vampire.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 	vampire.recalc();
@@ -152,7 +175,9 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	{
 		Actor vamp;
 		vamp.geometry = vampireVAO;
+		vamp.depthGeometry = vampireDepthVAO;
 		vamp.material = vampireMaterial;
+		vamp.depthMaterial = depthPassMaterial;
 		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -100.0));
 		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 		vamp.recalc();
@@ -233,7 +258,33 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	cameraIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(camera);
 
+	//Depth Only Pass
+	FBOLayout prePassLayout =
+	{
+		{ AttachmentType::Depth, true }
+	};
+	
+	/* DEPTH PREPASS BUG 
+	When looking at depth values in renderdoc, furthest depth is 1.0, closest is 9.98.....
+	This means that by using a bias, only large differences in depth work for the Z pre pass, since the difference in depth is so small for smaller differences
+	And without the bias, flickering and artefacts...
+	*/
+	
+	
+	DepthPass prePass;
+	prePass.scene = m_mainScene;
+	prePass.parseScene();
+	prePass.target = std::make_shared<FBO>(m_winRef.getSize(), prePassLayout);
+	prePass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
+	prePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	prePass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
+	prePass.UBOmanager.setCachedValue("b_camera", "u_view", prePass.camera.view);
+	prePass.UBOmanager.setCachedValue("b_camera", "u_projection", prePass.camera.projection);
 
+	m_mainRenderer.addDepthPass(prePass);
+
+	vampireMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
+	floorMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
 
 	/*************************
 	*  Main Render Pass
@@ -254,8 +305,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
-	//mainPass.target = std::make_shared<FBO>();
-	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
@@ -328,7 +378,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	//Fog Render Pass
 	std::shared_ptr<Material> fogRenderMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/FogFrag.glsl", fogRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
-	fogRenderMaterial->setValue("u_depthTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(1));
+	fogRenderMaterial->setValue("u_depthTexture", prePass.target->getTarget(0));
 	fogRenderMaterial->setValue("u_expSquared", 4.f);
 	screen.material = fogRenderMaterial;
 	m_screenScene->m_actors.push_back(screen);
@@ -336,7 +386,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	RenderPass fogRenderPass;
 	fogRenderPass.scene = m_screenScene;
 	fogRenderPass.parseScene(); //sorts UBOs for each actor
-	fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	fogRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	fogRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -450,7 +500,7 @@ Lab3::Lab3(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> dofMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
 	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); 
-	dofMaterial->setValue("u_depthTexture", m_mainRenderer.getRenderPass(0).target->getTarget(1)); //Main pass has depth buffer attached to target(1).
+	dofMaterial->setValue("u_depthTexture", prePass.target->getTarget(0)); //Main pass has depth buffer attached to target(1).
 	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass has depth buffer attached to target(1).
 	screen.material = dofMaterial;
 	m_screenScene->m_actors.push_back(screen);
