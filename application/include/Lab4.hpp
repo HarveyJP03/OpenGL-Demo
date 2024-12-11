@@ -19,12 +19,28 @@ private:
 	float m_edgeStrength = 1.0f;
 	float m_fogType = -1.0f;
 
-	int m_previousRenderPassIndex = 0; //To keep track of the index of the last added render pass
+	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
 	int m_blurPassIndex = -1;
 	int m_tintPassIndex = -1;
 	int m_edgeDetectionPassIndex = -1;
 	int m_fogPassIndex = -1;
 	int m_dofPassIndex = -1;
+
+	//To create view and projection matrices for camrea at light position
+	struct ShadowMapVars
+	{
+		glm::vec3 centre; //Centre of scene, where light is looking (dosen't have to always be centre, can be any point)
+		float distanceAlongLightVector;
+		float orthoSize; //Size of the orthographic projection (size of cube that light camera can see
+		const glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		ShadowMapVars(glm::vec3 c = glm::vec3(0.0), float dist = 60.0f) : centre(c), distanceAlongLightVector(dist)
+		{
+			orthoSize = distanceAlongLightVector * 1.5f;
+		};
+	};
+
+	ShadowMapVars m_shadowMapVars;
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
@@ -87,4 +103,5 @@ private:
 	float m_blurRadius = 1.5f;
 	bool m_wireFrame = false;
 	float m_focusDistance = 0.25f;
+	glm::vec3 m_lightDirection{ glm::vec3(0.2, -1.0, -0.5) };
 };

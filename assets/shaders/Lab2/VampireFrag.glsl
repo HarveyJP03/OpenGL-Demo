@@ -36,14 +36,14 @@ struct spotLight
 const int numPointLights = 60;
 const int numSpotLights = 1;
 
-layout (std140, binding = 1) uniform b_lights
+layout (std140, binding = 2) uniform b_lights
 {
 	uniform directionalLight dLight;
 	uniform pointLight pLights[numPointLights];
 	uniform spotLight sLights[numSpotLights];
 };
 
-layout (std140, binding = 0) uniform b_camera
+layout (std140, binding = 1) uniform b_camera
 {
 	uniform mat4 u_view;
 	uniform mat4 u_projection;

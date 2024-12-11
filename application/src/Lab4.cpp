@@ -16,11 +16,10 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	//Set Up Depth Only Pass Material
 	ShaderDescription depthShaderDesc;
 	depthShaderDesc.type = ShaderType::rasterization;
-	depthShaderDesc.vertexSrcPath = "./assets/shaders/Lab3/DepthVert.glsl";
-	depthShaderDesc.fragmentSrcPath = "./assets/shaders/Lab3/DepthFrag.glsl";
+	depthShaderDesc.vertexSrcPath = "./assets/shaders/Lab4/ShadowVert.glsl";
+	depthShaderDesc.fragmentSrcPath = "./assets/shaders/Lab4/ShadowFrag.glsl";
 	std::shared_ptr<Shader> depthShader = std::make_shared<Shader>(depthShaderDesc);
 	std::shared_ptr<Material> depthPassMaterial = std::make_shared<Material>(depthShader);
-
 
 	ShaderDescription phongShaderDesc; //Path to source files and shader type, used to load the shader.
 	phongShaderDesc.type = ShaderType::rasterization;
@@ -92,9 +91,9 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 
 	Actor floor;
 	floor.geometry = gridVAO;
-	floor.depthGeometry = floorDepthVAO;
+	//floor.depthGeometry = floorDepthVAO;
 	floor.material = floorMaterial;
-	floor.depthMaterial = depthPassMaterial;
+	//floor.depthMaterial = depthPassMaterial;
 	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
 	floor.recalc();
 	floorIdx = m_mainScene->m_actors.size();
@@ -102,9 +101,9 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 
 	Actor floor2;
 	floor2.geometry = gridVAO;
-	floor2.depthGeometry = floorDepthVAO;
+	//floor2.depthGeometry = floorDepthVAO;
 	floor2.material = floorMaterial;
-	floor2.depthMaterial = depthPassMaterial;
+	//floor2.depthMaterial = depthPassMaterial;
 	floor2.translation = glm::vec3(-50.0f, -5.f, -100.0f);
 	floor2.recalc();
 	m_mainScene->m_actors.push_back(floor2);
@@ -159,6 +158,8 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	vampireMaterial->setValue("u_albedoMap", vampireAlbedo);
 	vampireMaterial->setValue("u_normalMap", vampireNormal);
 
+	vampireMaterial->m_shader = vampireShader;
+
 	Actor vampire;
 	vampire.geometry = vampireVAO;
 	vampire.depthGeometry = vampireDepthVAO;
@@ -171,21 +172,22 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_actors.push_back(vampire);
 	//**Vampire Created
 
-	for (int i = 0; i < 40; i++)
+
+	for (int i = 0; i < 10; i++)
 	{
 		Actor vamp;
 		vamp.geometry = vampireVAO;
 		vamp.depthGeometry = vampireDepthVAO;
 		vamp.material = vampireMaterial;
 		vamp.depthMaterial = depthPassMaterial;
-		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -100.0));
+		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -50.0));
 		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 		vamp.recalc();
 		m_mainScene->m_actors.push_back(vamp);
 	}
 
 	DirectionalLight dl;
-	dl.direction = glm::normalize(glm::vec3(0.2, -1.0, -0.5));
+	dl.direction = glm::normalize(m_lightDirection);
 	dl.colour = glm::vec3(0.25f);
 	m_mainScene->m_directionalLights.push_back(dl);
 
@@ -263,28 +265,59 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	{
 		{ AttachmentType::Depth, true }
 	};
+	
+	
+	
+	///* DEPTH PREPASS BUG
+	//When looking at depth values in renderdoc, furthest depth is 1.0, closest is 9.98.....
+	//This means that by using a bias, only large differences in depth work for the Z pre pass, since the difference in depth is so small for smaller differences
+	//And without the bias, flickering and artefacts...
+	//*/
+	//DepthPass prePass;
+	//prePass.scene = m_mainScene;
+	//prePass.parseScene();
+	//prePass.target = std::make_shared<FBO>(m_winRef.getSize(), prePassLayout);
+	//prePass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
+	//prePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//prePass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
+	//prePass.UBOmanager.setCachedValue("b_camera", "u_view", prePass.camera.view);
+	//prePass.UBOmanager.setCachedValue("b_camera", "u_projection", prePass.camera.projection);
+	//m_mainRenderer.addDepthPass(prePass);
+	//m_previousRenderPassIndex++;
+	//vampireMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
+	//floorMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
 
-	/* DEPTH PREPASS BUG
-	When looking at depth values in renderdoc, furthest depth is 1.0, closest is 9.98.....
-	This means that by using a bias, only large differences in depth work for the Z pre pass, since the difference in depth is so small for smaller differences
-	And without the bias, flickering and artefacts...
-	*/
+
+	DepthPass shadowPass;
+	shadowPass.scene = m_mainScene;
+	shadowPass.parseScene();
+	shadowPass.target = std::make_shared<FBO>(glm::ivec2(4096, 4096), prePassLayout);
+	shadowPass.viewPort = { 0, 0, 4096, 4096 }; //Larger viewport, more fragments availabe to store depth info, more accurate show map
 
 
-	DepthPass prePass;
-	prePass.scene = m_mainScene;
-	prePass.parseScene();
-	prePass.target = std::make_shared<FBO>(m_winRef.getSize(), prePassLayout);
-	prePass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
-	prePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
-	prePass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
-	prePass.UBOmanager.setCachedValue("b_camera", "u_view", prePass.camera.view);
-	prePass.UBOmanager.setCachedValue("b_camera", "u_projection", prePass.camera.projection);
+	/* Get view direction from light to center, and then place light camera some distance along this vector */
+	glm::vec3 lightPosition = (m_shadowMapVars.centre - glm::normalize(m_mainScene->m_directionalLights.at(0).direction)) * m_shadowMapVars.distanceAlongLightVector;
+	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
+	shadowPass.camera.view = shadowView;
+	shadowPass.camera.projection = glm::ortho( -m_shadowMapVars.orthoSize, //Left			Vertical Clipping PLanes
+											    m_shadowMapVars.orthoSize, //Right
+												-m_shadowMapVars.orthoSize, //Bottom        Horizontal Clipping Planes
+												m_shadowMapVars.orthoSize, //Top
+												-m_shadowMapVars.orthoSize / 2, //Near
+												m_shadowMapVars.orthoSize * 2);//Far
 
-	m_mainRenderer.addDepthPass(prePass);
 
-	vampireMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
-	floorMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
+	shadowPass.UBOmanager.setCachedValue("b_lightCamera", "u_view", shadowPass.camera.view);
+	shadowPass.UBOmanager.setCachedValue("b_lightCamera", "u_projection", shadowPass.camera.projection);
+
+	m_mainRenderer.addDepthPass(shadowPass);
+	m_previousRenderPassIndex++;
+
+	//b_lightCamera = 0
+	//b_camera = 1
+	//b_lights = 2
+	//b_camera2D = 3
+
 
 	/*************************
 	*  Main Render Pass
@@ -305,7 +338,7 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	RenderPass mainPass;
 	mainPass.scene = m_mainScene;
 	mainPass.parseScene();
-	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
 	mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
@@ -353,100 +386,100 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	//For Post processing render passes, use screen (quad) as input texture
 	m_screenScene.reset(new Scene);
 
-	////Depth Render Pass
-	//std::shared_ptr<Material> depthRenderMaterial;
-	//SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(1)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
-	//screen.material = depthRenderMaterial;
+	//Depth Render Pass
+	std::shared_ptr<Material> depthRenderMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, shadowPass.target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
+	screen.material = depthRenderMaterial;
+	m_screenScene->m_actors.push_back(screen);
+	
+	RenderPass depthRenderPass;
+	depthRenderPass.scene = m_screenScene;
+	depthRenderPass.parseScene(); //sorts UBOs for each actor
+	depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", depthRenderPass.camera.view);
+	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", depthRenderPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(depthRenderPass);
+	m_previousRenderPassIndex++;
+	m_screenScene.reset(new Scene);
+	//Depth Render Pass Setup
+
+
+	////Fog Render Pass
+	//std::shared_ptr<Material> fogRenderMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab3/FogFrag.glsl", fogRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
+	//fogRenderMaterial->setValue("u_depthTexture", mainPass.target->getTarget(1));
+	//fogRenderMaterial->setValue("u_expSquared", 4.f);
+	//screen.material = fogRenderMaterial;
 	//m_screenScene->m_actors.push_back(screen);
-	//
-	//RenderPass depthRenderPass;
-	//depthRenderPass.scene = m_screenScene;
-	//depthRenderPass.parseScene(); //sorts UBOs for each actor
-	//depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
-	//depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	//depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	//depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", depthRenderPass.camera.view);
-	//depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", depthRenderPass.camera.projection);
+	//RenderPass fogRenderPass;
+	//fogRenderPass.scene = m_screenScene;
+	//fogRenderPass.parseScene(); //sorts UBOs for each actor
+	//fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//fogRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	//m_mainRenderer.addRenderPass(depthRenderPass);
+	//fogRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//fogRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", fogRenderPass.camera.view);
+	//fogRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", fogRenderPass.camera.projection);
+
+	//m_mainRenderer.addRenderPass(fogRenderPass);
 	//m_previousRenderPassIndex++;
+	//m_fogPassIndex = m_previousRenderPassIndex;
 	//m_screenScene.reset(new Scene);
-	////Depth Render Pass Setup
+	////Fog Render Pass Setup
 
 
-	//Fog Render Pass
-	std::shared_ptr<Material> fogRenderMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab3/FogFrag.glsl", fogRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
-	fogRenderMaterial->setValue("u_depthTexture", prePass.target->getTarget(0));
-	fogRenderMaterial->setValue("u_expSquared", 4.f);
-	screen.material = fogRenderMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Edge Detection Pass : Need to comment setting of u_edgeStrength in onUpdate if commenting this out
+	//std::shared_ptr<Material> edgeDetectionMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab3/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	//edgeDetectionMaterial->setValue("u_edgeStrength", m_edgeStrength);
+	//screen.material = edgeDetectionMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass fogRenderPass;
-	fogRenderPass.scene = m_screenScene;
-	fogRenderPass.parseScene(); //sorts UBOs for each actor
-	fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	fogRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass edgeDetectionPass;
+	//edgeDetectionPass.scene = m_screenScene;
+	//edgeDetectionPass.parseScene(); //sorts UBOs for each actor
+	//edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
+	//edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	fogRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	fogRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", fogRenderPass.camera.view);
-	fogRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", fogRenderPass.camera.projection);
+	//edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_view", edgeDetectionPass.camera.view);
+	//edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", edgeDetectionPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(fogRenderPass);
-	m_previousRenderPassIndex++;
-	m_fogPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Fog Render Pass Setup
-
-
-	//Edge Detection Pass : Need to comment setting of u_edgeStrength in onUpdate if commenting this out
-	std::shared_ptr<Material> edgeDetectionMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab3/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
-	edgeDetectionMaterial->setValue("u_edgeStrength", m_edgeStrength);
-	screen.material = edgeDetectionMaterial;
-	m_screenScene->m_actors.push_back(screen);
-
-	RenderPass edgeDetectionPass;
-	edgeDetectionPass.scene = m_screenScene;
-	edgeDetectionPass.parseScene(); //sorts UBOs for each actor
-	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
-	edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
-
-	edgeDetectionPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_view", edgeDetectionPass.camera.view);
-	edgeDetectionPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", edgeDetectionPass.camera.projection);
-
-	m_mainRenderer.addRenderPass(edgeDetectionPass);
-	m_previousRenderPassIndex++;
-	m_edgeDetectionPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Edge Detection Pass completed
+	//m_mainRenderer.addRenderPass(edgeDetectionPass);
+	//m_previousRenderPassIndex++;
+	//m_edgeDetectionPassIndex = m_previousRenderPassIndex;
+	//m_screenScene.reset(new Scene);
+	////Edge Detection Pass completed
 
 
-	//Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
-	std::shared_ptr<Material> tintMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	screen.material = tintMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
+	//std::shared_ptr<Material> tintMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//screen.material = tintMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass tintPass;
-	tintPass.scene = m_screenScene;
-	tintPass.parseScene(); //sorts UBOs for each actor
-	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	tintPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass tintPass;
+	//tintPass.scene = m_screenScene;
+	//tintPass.parseScene(); //sorts UBOs for each actor
+	//tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//tintPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	tintPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	tintPass.UBOmanager.setCachedValue("b_camera2D", "u_view", tintPass.camera.view);
-	tintPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", tintPass.camera.projection);
+	//tintPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//tintPass.UBOmanager.setCachedValue("b_camera2D", "u_view", tintPass.camera.view);
+	//tintPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", tintPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(tintPass);
-	m_previousRenderPassIndex++;
-	m_tintPassIndex = m_previousRenderPassIndex;
-	//Without resetting scene after each pass, it shows black
-	m_screenScene.reset(new Scene);
-	//Tint Pass setup
+	//m_mainRenderer.addRenderPass(tintPass);
+	//m_previousRenderPassIndex++;
+	//m_tintPassIndex = m_previousRenderPassIndex;
+	////Without resetting scene after each pass, it shows black
+	//m_screenScene.reset(new Scene);
+	////Tint Pass setup
 
 
 	////Sepia Pass
@@ -471,55 +504,55 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	////Sepia Pass Setup
 
 
-	//Blur Pass : Need to comment setting of uBlurRadius in onUpdate if commenting this out
-	std::shared_ptr<Material> blurMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
-	blurMaterial->setValue("u_blurRadius", m_blurRadius);
-	screen.material = blurMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Blur Pass : Need to comment setting of uBlurRadius in onUpdate if commenting this out
+	//std::shared_ptr<Material> blurMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	//blurMaterial->setValue("u_blurRadius", m_blurRadius);
+	//screen.material = blurMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass blurPass;
-	blurPass.scene = m_screenScene;
-	blurPass.parseScene(); //sorts UBOs for each actor
-	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass blurPass;
+	//blurPass.scene = m_screenScene;
+	//blurPass.parseScene(); //sorts UBOs for each actor
+	//blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_view", blurPass.camera.view);
-	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
+	//blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//blurPass.UBOmanager.setCachedValue("b_camera2D", "u_view", blurPass.camera.view);
+	//blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(blurPass);
-	m_previousRenderPassIndex++;
-	m_blurPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Blur Pass Completed
+	//m_mainRenderer.addRenderPass(blurPass);
+	//m_previousRenderPassIndex++;
+	//m_blurPassIndex = m_previousRenderPassIndex;
+	//m_screenScene.reset(new Scene);
+	////Blur Pass Completed
 
 
-	//Depth of Field Pass
-	std::shared_ptr<Material> dofMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
-	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	dofMaterial->setValue("u_depthTexture", prePass.target->getTarget(0)); //Main pass has depth buffer attached to target(1).
-	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass has depth buffer attached to target(1).
-	screen.material = dofMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Depth of Field Pass
+	//std::shared_ptr<Material> dofMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
+	//dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//dofMaterial->setValue("u_depthTexture", mainPass.target->getTarget(1)); //Main pass has depth buffer attached to target(1).
+	//dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass has depth buffer attached to target(1).
+	//screen.material = dofMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass dofPass;
-	dofPass.scene = m_screenScene;
-	dofPass.parseScene(); //sorts UBOs for each actor
-	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass dofPass;
+	//dofPass.scene = m_screenScene;
+	//dofPass.parseScene(); //sorts UBOs for each actor
+	//dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
-	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
+	//dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
+	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(dofPass);
-	m_previousRenderPassIndex++;
-	m_dofPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Depth of Field pass completed
+	//m_mainRenderer.addRenderPass(dofPass);
+	//m_previousRenderPassIndex++;
+	//m_dofPassIndex = m_previousRenderPassIndex;
+	//m_screenScene.reset(new Scene);
+	////Depth of Field pass completed
 
 
 	//Vignette Pass
@@ -599,7 +632,8 @@ void Lab4::onUpdate(float timestep)
 	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
 	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
 
-
+	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
+	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
@@ -613,6 +647,10 @@ void Lab4::onUpdate(float timestep)
 	pass.camera.updateView(camera.transform);
 	pass.UBOmanager.setCachedValue("b_camera", "u_view", pass.camera.view);
 	pass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
+
+	glm::vec3 lightPosition = (m_shadowMapVars.centre - m_mainScene->m_directionalLights.at(0).direction) * m_shadowMapVars.distanceAlongLightVector;
+	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
+	m_mainRenderer.getDepthPass(0).UBOmanager.setCachedValue("b_lightCamera", "u_view", shadowView);
 }
 
 
@@ -631,6 +669,7 @@ void Lab4::onImGUIRender()
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
@@ -646,7 +685,6 @@ void Lab4::onImGUIRender()
 
 void Lab4::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
-	//Tint pass
 	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
 	shaderDesc.type = ShaderType::rasterization;
 	shaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";

@@ -5,7 +5,7 @@ layout(location = 1) in vec3 a_vertexNormal;
 layout(location = 2) in vec2 a_texCoord;
 
 
-layout (std140, binding = 0) uniform b_camera
+layout (std140, binding = 1) uniform b_camera
 {
 	uniform mat4 u_view;
 	uniform mat4 u_projection;
