@@ -41,6 +41,11 @@ private:
 	};
 
 	ShadowMapVars m_shadowMapVars;
+	std::shared_ptr<Material> vampireMaterial;
+	std::shared_ptr<Material> floorMaterial;
+
+	std::vector<int> vampireIdxs;
+
 
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
@@ -103,5 +108,5 @@ private:
 	float m_blurRadius = 1.5f;
 	bool m_wireFrame = false;
 	float m_focusDistance = 0.25f;
-	glm::vec3 m_lightDirection{ glm::vec3(0.2, -1.0, -0.5) };
+	glm::vec3 m_lightDirection{ glm::vec3(-0.2, -1.0, -0.5) };
 };

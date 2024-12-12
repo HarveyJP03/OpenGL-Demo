@@ -18,14 +18,15 @@ out vec4 fragPosClipSpace;
 out vec3 vertexNormal;
 out vec2 texCoord;
 out mat3 TBN; //matrix to change tangents from tangent space to world space (in line with object surface)
+out vec4 fragmentPosLightSpace;
 
 uniform mat4 u_model;
 
+uniform mat4 u_lightSpaceTransform;
 
 void main()
 {
 	fragmentPos = vec3(u_model * vec4(a_vertexPosition, 1.0));
-	
 	fragPosClipSpace = u_projection * u_view * u_model * vec4(a_vertexPosition, 1.0);
 	 
 	vertexNormal = normalize(mat3(transpose(inverse(u_model))) * a_vertexNormal);
@@ -36,5 +37,8 @@ void main()
 	T = normalize(T - dot(T, vertexNormal) * vertexNormal); //Make sure TBN is still orthogonal, since tangents are averaged they TBN can be slightly off
 	vec3 B = normalize(cross(vertexNormal, T));
 	TBN = mat3(T, B, vertexNormal);
+	
+	//Shadow Mapping
+	fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
 
 }

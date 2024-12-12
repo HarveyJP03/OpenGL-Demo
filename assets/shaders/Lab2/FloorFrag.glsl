@@ -7,6 +7,7 @@ in vec3 vertexNormal;
 in vec3 fragmentPos;
 in vec4 fragPosClipSpace;
 in vec2 texCoord;
+in vec4 fragmentPosLightSpace;
 
 
 struct directionalLight
@@ -32,7 +33,7 @@ struct spotLight
 	float outerCutOff;
 };
 
-const int numPointLights = 60;
+const int numPointLights = 1;
 const int numSpotLights = 1;
 
 layout (std140, binding = 2) uniform b_lights
@@ -54,6 +55,7 @@ uniform sampler2D u_albedoMap;
 uniform vec3 u_albedo;
 
 uniform sampler2D u_depthMap;
+uniform sampler2D u_shadowMap;
 
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
@@ -68,6 +70,7 @@ vec3 viewDir ;
 
 
 bool doesPassDepthTest();
+float ShadowCalculation();
 
 
 void main()
@@ -81,7 +84,7 @@ void main()
 
 	// light casters
 
-	//result += getDirectionalLight();
+	result += getDirectionalLight();
 	
 	for(int i = 0; i <numPointLights; i++)
 	{
@@ -109,6 +112,23 @@ bool doesPassDepthTest()
 	return true;
 }
 
+float ShadowCalculation()
+{
+	//Perspective divide
+	vec3 projCoords = fragmentPosLightSpace.xyz / fragmentPosLightSpace.w;
+
+	//Map to [0,1]
+	projCoords = projCoords * 0.5 + 0.5;
+
+	float closestDepth = texture(u_shadowMap, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+
+	float shadow = 0.0f;
+
+	if(currentDepth > closestDepth) shadow = 1.0f;
+	return shadow;
+}
+
 
 vec3 getDirectionalLight()
 {
@@ -122,7 +142,8 @@ vec3 getDirectionalLight()
 	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
     vec3 specular = dLight.colour * specularFactor * specularStrength;
 
-	return specular + (diffuse + specular);
+	float shadowAmount = ShadowCalculation();
+	return ambient +(1.0 - shadowAmount) * (diffuse + specular);
 }
 
 vec3 getPointLight(int idx)

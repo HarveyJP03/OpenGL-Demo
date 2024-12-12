@@ -85,13 +85,12 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	floorDepthVAO = std::make_shared<VAO>(grid->getIndices());
 	floorDepthVAO->addVertexBuffer(grid->getVertexPositions(), depthLayout);
 
-	std::shared_ptr<Material> floorMaterial;
 	floorMaterial = std::make_shared<Material>(floorShader);
 	floorMaterial->setValue("u_albedo", m_floorColour);
 
 	Actor floor;
 	floor.geometry = gridVAO;
-	//floor.depthGeometry = floorDepthVAO;
+	//.depthGeometry = floorDepthVAO;
 	floor.material = floorMaterial;
 	//floor.depthMaterial = depthPassMaterial;
 	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
@@ -151,7 +150,7 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Texture> vampireNormal;
 	vampireNormal = std::make_shared<Texture>("./assets/models/Vampire/textures/normal.png");
 
-	std::shared_ptr<Material> vampireMaterial;
+
 	vampireMaterial = std::make_shared<Material>(vampireShader);
 	vampireMaterial->setValue("u_albedo", m_colour);
 	vampireMaterial->setValue("u_specularMap", vampireSpecular);
@@ -192,7 +191,7 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
-	uint32_t numPointLights = 60;
+	uint32_t numPointLights = 1;
 
 
 	for (int i = 0; i < numPointLights; i++)
@@ -313,10 +312,11 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	m_mainRenderer.addDepthPass(shadowPass);
 	m_previousRenderPassIndex++;
 
-	//b_lightCamera = 0
-	//b_camera = 1
-	//b_lights = 2
-	//b_camera2D = 3
+	vampireMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection* shadowPass.camera.view);
+	floorMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection* shadowPass.camera.view);
+
+	vampireMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
+	floorMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
 
 
 	/*************************
@@ -386,26 +386,26 @@ Lab4::Lab4(GLFWWindowImpl& win) : Layer(win)
 	//For Post processing render passes, use screen (quad) as input texture
 	m_screenScene.reset(new Scene);
 
-	//Depth Render Pass
-	std::shared_ptr<Material> depthRenderMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, shadowPass.target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
-	screen.material = depthRenderMaterial;
-	m_screenScene->m_actors.push_back(screen);
-	
-	RenderPass depthRenderPass;
-	depthRenderPass.scene = m_screenScene;
-	depthRenderPass.parseScene(); //sorts UBOs for each actor
-	depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
-	depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	////Depth Render Pass
+	//std::shared_ptr<Material> depthRenderMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, shadowPass.target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
+	//screen.material = depthRenderMaterial;
+	//m_screenScene->m_actors.push_back(screen);
+	//
+	//RenderPass depthRenderPass;
+	//depthRenderPass.scene = m_screenScene;
+	//depthRenderPass.parseScene(); //sorts UBOs for each actor
+	//depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	//depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", depthRenderPass.camera.view);
-	depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", depthRenderPass.camera.projection);
+	//depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_view", depthRenderPass.camera.view);
+	//depthRenderPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", depthRenderPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(depthRenderPass);
-	m_previousRenderPassIndex++;
-	m_screenScene.reset(new Scene);
-	//Depth Render Pass Setup
+	//m_mainRenderer.addRenderPass(depthRenderPass);
+	//m_previousRenderPassIndex++;
+	//m_screenScene.reset(new Scene);
+	////Depth Render Pass Setup
 
 
 	////Fog Render Pass
@@ -610,7 +610,11 @@ void Lab4::onUpdate(float timestep)
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
 
-	for (int i = 0; i < 30; i++)
+
+	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
+	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+
+	for (int i = 0; i < 1; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
@@ -632,9 +636,6 @@ void Lab4::onUpdate(float timestep)
 	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
 	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
 
-	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
-	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
-
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
 	{
@@ -648,9 +649,20 @@ void Lab4::onUpdate(float timestep)
 	pass.UBOmanager.setCachedValue("b_camera", "u_view", pass.camera.view);
 	pass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
 
+
+
 	glm::vec3 lightPosition = (m_shadowMapVars.centre - m_mainScene->m_directionalLights.at(0).direction) * m_shadowMapVars.distanceAlongLightVector;
 	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
-	m_mainRenderer.getDepthPass(0).UBOmanager.setCachedValue("b_lightCamera", "u_view", shadowView);
+	m_mainRenderer.getDepthPass(0).camera.view = shadowView;
+
+	m_mainRenderer.getDepthPass(0).UBOmanager.setCachedValue("b_lightCamera", "u_view", m_mainRenderer.getDepthPass(0).camera.view);
+
+	auto vampMat = m_mainScene->m_actors.at(vampireIdx).material;
+	floorMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+	vampMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+
+	floorMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
+	vampMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 }
 
 
@@ -673,7 +685,7 @@ void Lab4::onImGUIRender()
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-	GLuint textureID = m_mainRenderer.getRenderPass(0).target->getTarget(0)->getID();
+	GLuint textureID = m_mainRenderer.getDepthPass(0).target->getTarget(0)->getID();
 	ImVec2 imageSize = ImVec2(256, 256);
 	ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 	ImVec2 uv1 = ImVec2(1.0f, 0.0f);
