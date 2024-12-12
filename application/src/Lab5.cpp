@@ -24,7 +24,7 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	ShaderDescription phongShaderDesc; //Path to source files and shader type, used to load the shader.
 	phongShaderDesc.type = ShaderType::rasterization;
 	phongShaderDesc.vertexSrcPath = "./assets/shaders/PhongVert.glsl";
-	phongShaderDesc.fragmentSrcPath = "./assets/shaders/PhongFrag.glsl";
+	phongShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/PhongFrag.glsl";
 
 	std::shared_ptr<Shader> phongShader;
 	phongShader = std::make_shared<Shader>(phongShaderDesc);
@@ -65,8 +65,8 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 
 	ShaderDescription floorShaderDesc; //Path to source files and shader type, used to load the shader.
 	floorShaderDesc.type = ShaderType::rasterization;
-	floorShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/FloorVert.glsl";
-	floorShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/FloorFrag.glsl";
+	floorShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/FloorVert.glsl";
+	floorShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/FloorFrag.glsl";
 
 	std::shared_ptr<Shader> floorShader;
 	floorShader = std::make_shared<Shader>(floorShaderDesc);
@@ -112,8 +112,8 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	//**Creating Vampire
 	ShaderDescription vampireShaderDesc; //Path to source files and shader type, used to load the shader.
 	vampireShaderDesc.type = ShaderType::rasterization;
-	vampireShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/VampireVert.glsl";
-	vampireShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/VampireFrag.glsl";
+	vampireShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/VampireVert.glsl";
+	vampireShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/VampireFrag.glsl";
 	std::shared_ptr<Shader> vampireShader;
 	vampireShader = std::make_shared<Shader>(vampireShaderDesc);
 
@@ -172,14 +172,14 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	//**Vampire Created
 
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 40; i++)
 	{
 		Actor vamp;
 		vamp.geometry = vampireVAO;
 		vamp.depthGeometry = vampireDepthVAO;
 		vamp.material = vampireMaterial;
 		vamp.depthMaterial = depthPassMaterial;
-		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -50.0));
+		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -80.0));
 		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 		vamp.recalc();
 		m_mainScene->m_actors.push_back(vamp);
@@ -191,10 +191,10 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	m_mainScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
-	uint32_t numPointLights = 1;
+	m_numPointLights = 60;
 
 
-	for (int i = 0; i < numPointLights; i++)
+	for (int i = 0; i < m_numPointLights; i++)
 	{
 		if (i == 0)
 		{
@@ -348,7 +348,7 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	mainPass.UBOmanager.setCachedValue("b_lights", "dLight.colour", m_mainScene->m_directionalLights.at(0).colour);
 	mainPass.UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
-	for (int i = 0; i < numPointLights; i++)
+	for (int i = 0; i < m_numPointLights; i++)
 	{
 		bool passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
 		passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
@@ -614,7 +614,7 @@ void Lab5::onUpdate(float timestep)
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < m_numPointLights; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);

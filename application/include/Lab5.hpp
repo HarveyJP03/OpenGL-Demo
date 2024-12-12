@@ -15,6 +15,8 @@ private:
 	std::shared_ptr<Scene> m_mainScene;
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 
+	int m_numPointLights = 30;
+
 	//In header, as needs to be accessed from update() to set the colour through ImGui
 	float m_edgeStrength = 1.0f;
 	float m_fogType = -1.0f;
