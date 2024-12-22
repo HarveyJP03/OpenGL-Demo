@@ -14,6 +14,8 @@ private:
 	void SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex); //Create shader and add to material passed in, set u_inputTexture
 	std::shared_ptr<Scene> m_mainScene;
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
+	std::shared_ptr<Material> lightPassMaterial;
+	float m_strength = 0.5f;
 
 	int m_numPointLights = 30;
 

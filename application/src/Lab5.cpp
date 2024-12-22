@@ -416,8 +416,13 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Shader> lightPassShader;
 	lightPassShader = std::make_shared<Shader>(lightPassShaderDesc);
 	
-	std::shared_ptr<Material> lightPassMaterial;
 	lightPassMaterial = std::make_shared<Material>(lightPassShader);
+	lightPassMaterial->setValue("u_positionTexture", GPass.target->getTarget(0));
+	lightPassMaterial->setValue("u_normalTexture", GPass.target->getTarget(1));
+	lightPassMaterial->setValue("u_albedoTexture", GPass.target->getTarget(2));
+	lightPassMaterial->setValue("u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
+
+
 	screen.material = lightPassMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -427,6 +432,16 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	LightPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
 	LightPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	LightPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+
+	LightPass.UBOmanager.setCachedValue("b_lights", "dLight.colour", m_mainScene->m_directionalLights.at(0).colour);
+	LightPass.UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+
+	for (int i = 0; i < m_numPointLights; i++)
+	{
+		bool passed = LightPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		passed = LightPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		passed = LightPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+	}
 
 
 	m_mainRenderer.addRenderPass(LightPass);
@@ -660,18 +675,17 @@ void Lab5::onUpdate(float timestep)
 
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
-	m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+	m_mainRenderer.getRenderPass(2).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
 	for (int i = 0; i < m_numPointLights; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
 
-		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
-		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
-		m_mainRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+		m_mainRenderer.getRenderPass(2).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		m_mainRenderer.getRenderPass(2).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		m_mainRenderer.getRenderPass(2).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
 	}
-
 
 	m_mainRenderer.getRenderPass(0).drawInWireFrame = m_wireFrame;
 
@@ -683,6 +697,7 @@ void Lab5::onUpdate(float timestep)
 	if (m_edgeDetectionPassIndex != -1) m_mainRenderer.getRenderPass(m_edgeDetectionPassIndex).scene->m_actors.at(0).material->setValue("u_edgeStrength", m_edgeStrength);
 	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
 	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
+
 
 	// Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
@@ -697,7 +712,7 @@ void Lab5::onUpdate(float timestep)
 	pass.UBOmanager.setCachedValue("b_camera", "u_view", pass.camera.view);
 	pass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
 
-
+	lightPassMaterial->setValue("u_viewPos", camera.translation);
 
 	glm::vec3 lightPosition = (m_shadowMapVars.centre - m_mainScene->m_directionalLights.at(0).direction) * m_shadowMapVars.distanceAlongLightVector;
 	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
@@ -729,11 +744,14 @@ void Lab5::onImGUIRender()
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+
+	ImGui::DragFloat("Edge Strength", (float*)&m_strength, 0.002f, 0.f, 1.0f);
+
 	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 
 	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-	GLuint textureID = m_mainRenderer.getRenderPass(0).target->getTarget(0)->getID();
+	GLuint textureID = m_mainRenderer.getDepthPass(0).target->getTarget(0)->getID();
 	ImVec2 imageSize = ImVec2(256, 256);
 	ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 	ImVec2 uv1 = ImVec2(1.0f, 0.0f);

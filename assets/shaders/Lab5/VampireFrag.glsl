@@ -68,7 +68,7 @@ vec3 getSpotLight(int idx) ;
 //global vars
 vec3 normal ;
 vec3 albedoColour ;
-float specularStrength  = 0.0f ;
+float specularStrength;
 vec3 viewDir ;
 
 float ShadowCalculation();
@@ -85,22 +85,7 @@ void main()
 	n = n * 2.0 - 1.0;
 	n = normalize(TBN * n);
 	normal = n;
-
-
-	// light casters
-
-	result += getDirectionalLight();
-	
-	for(int i = 0; i < numPointLights; i++)
-	{
-		result += getPointLight(i);
-	}
-	
-	for(int i = 0; i < numSpotLights; i++)
-	{
-		//result += getSpotLight(i);
-	}
-	      
+ 
 	//gPosition = vec4(result * u_albedo, 1.0) * texture(u_albedoMap, texCoord);
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 0.0);
