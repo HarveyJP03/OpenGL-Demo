@@ -14,7 +14,6 @@ layout (std140, binding = 1) uniform b_camera
 };
 
 out vec3 fragmentPos;
-out vec3 vertexNormal;
 out vec2 texCoord;
 out mat3 TBN; //matrix to change tangents from tangent space to world space (in line with object surface)
 out vec4 fragmentPosLightSpace;
@@ -27,7 +26,7 @@ void main()
 {
 	fragmentPos = vec3(u_model * vec4(a_vertexPosition, 1.0));
 	 
-	vertexNormal = normalize(mat3(transpose(inverse(u_model))) * a_vertexNormal);
+	vec3 vertexNormal = normalize(mat3(transpose(inverse(u_model))) * a_vertexNormal);
 	texCoord = a_texCoord;
 	gl_Position = u_projection * u_view * vec4(fragmentPos,1.0);
 
