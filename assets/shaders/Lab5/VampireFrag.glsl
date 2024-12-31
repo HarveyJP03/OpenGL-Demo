@@ -9,7 +9,7 @@ layout(location = 3) out vec4 gSpec;
 in vec3 fragmentPos;
 in vec2 texCoord;
 in mat3 TBN;
-in vec4 fragmentPosLightSpace;
+//in vec4 fragmentPosLightSpace;
 
 
 struct directionalLight
@@ -59,7 +59,7 @@ uniform vec3 u_albedo;
 uniform sampler2D u_specularMap;
 uniform sampler2D u_normalMap;
 
-uniform sampler2D u_shadowMap;
+//uniform sampler2D u_shadowMap;
 
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
@@ -71,8 +71,6 @@ vec3 normal ;
 vec3 albedoColour ;
 float specularStrength;
 vec3 viewDir ;
-
-float ShadowCalculation();
 
 
 void main()
@@ -94,37 +92,6 @@ void main()
 	gSpec = vec4(specularStrength);
 }
 
-float ShadowCalculation()
-{
-	//Perspective divide
-	vec3 projCoords = fragmentPosLightSpace.xyz / fragmentPosLightSpace.w;
-
-	//Map to [0,1]
-	projCoords = projCoords * 0.5 + 0.5;
-
-	float closestDepth = texture(u_shadowMap, projCoords.xy).r;
-	float currentDepth = projCoords.z;
-
-	float shadow = 0.0f;
-	float bias = 0.015f;
-
-	vec2 texelSize = 1.0 / textureSize(u_shadowMap, 0);
-	float samplesTaken = 0.0f;
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float texelDepth = texture(u_shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-			shadow += currentDepth - bias > texelDepth ? 1.0 : 0.0;
-			samplesTaken++;
-		}
-	}
-
-	shadow /= samplesTaken;
-
-	//if(currentDepth - bias > closestDepth) shadow = 1.0f;
-	return shadow;
-}
 
 vec3 getDirectionalLight()
 {
@@ -138,8 +105,8 @@ vec3 getDirectionalLight()
 	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
     vec3 specular = dLight.colour * specularFactor * specularStrength;
 
-	float shadowAmount = ShadowCalculation();
-	return ambient +(1.0 - shadowAmount) * (diffuse + specular);
+	//float shadowAmount = ShadowCalculation();
+	return ambient * (diffuse + specular);
 }
 
 vec3 getPointLight(int idx)

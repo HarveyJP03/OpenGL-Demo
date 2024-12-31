@@ -45,8 +45,6 @@ uniform vec3 u_albedo;
 uniform sampler2D u_specularMap;
 uniform sampler2D u_normalMap;
 
-uniform sampler2D u_shadowMap;
-
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
 vec3 getSpotLight(int idx) ;
@@ -69,6 +67,8 @@ vec3 viewDir ;
 
 float ShadowCalculation();
 
+uniform mat4 u_lightSpaceTransform;
+uniform sampler2D u_shadowMap;
 
 void main()
 {	
@@ -106,22 +106,56 @@ void main()
 	//colour = vec4(specularStrength);
 }
 
+float ShadowCalculation()
+{
+	//Perspective divide
+	vec4 fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
+	vec3 projCoords = fragmentPosLightSpace.xyz / fragmentPosLightSpace.w;
 
+	//Map to [0,1]
+	projCoords = projCoords * 0.5 + 0.5;
+
+	float closestDepth = texture(u_shadowMap, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+
+	float shadow = 0.0f;
+	float bias = 0.00015f;
+
+	vec2 texelSize = 1.0 / textureSize(u_shadowMap, 0);
+	float samplesTaken = 0.0f;
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float texelDepth = texture(u_shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+			shadow += currentDepth - bias > texelDepth ? 1.0 : 0.0;
+			samplesTaken++;
+		}
+	}
+
+	shadow /= samplesTaken;
+
+	//if(currentDepth - bias > closestDepth) shadow = 1.0f;
+	return shadow;
+
+}
 
 vec3 getDirectionalLight()
 {
 	float ambientStrength = 0.1;
-	vec3 ambient = ambientStrength * dLight.colour ;
+	vec3 ambient = ambientStrength * dLight.colour;
 
 	float diffuseFactor = max(dot(normal, -dLight.direction), 0.0);
-	vec3 diffuse = diffuseFactor * dLight.colour ;
+	vec3 diffuse = diffuseFactor * dLight.colour;
 	
-	vec3 H = normalize(-dLight.direction + viewDir ) ;
-	float specularFactor = pow(max(dot(normal, H) , 0.0), 64) ;
+	vec3 H = normalize(-dLight.direction + viewDir );
+	float specularFactor = pow(max(dot(normal, H) , 0.0), 64);
     vec3 specular = dLight.colour * specularFactor * specularStrength;
 
-	//float shadowAmount = ShadowCalculation();
-	return ambient + diffuse + specular;
+	float shadowAmount = ShadowCalculation();
+
+	return ambient +(1.0 - shadowAmount)  * (diffuse + specular);
+	//return ambient + diffuse + specular;
 }
 
 vec3 getPointLight(int idx)

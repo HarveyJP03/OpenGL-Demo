@@ -16,7 +16,7 @@ layout (std140, binding = 1) uniform b_camera
 out vec3 fragmentPos;
 out vec2 texCoord;
 out mat3 TBN; //matrix to change tangents from tangent space to world space (in line with object surface)
-out vec4 fragmentPosLightSpace;
+//out vec4 fragmentPosLightSpace;
 
 uniform mat4 u_model;
 
@@ -36,6 +36,6 @@ void main()
 	TBN = mat3(T, B, vertexNormal);
 	
 	//Shadow Mapping
-	fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
+	//fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
 
 }

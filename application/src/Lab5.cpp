@@ -275,27 +275,6 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	};
 
 
-
-	///* DEPTH PREPASS BUG
-	//When looking at depth values in renderdoc, furthest depth is 1.0, closest is 9.98.....
-	//This means that by using a bias, only large differences in depth work for the Z pre pass, since the difference in depth is so small for smaller differences
-	//And without the bias, flickering and artefacts...
-	//*/
-	//DepthPass prePass;
-	//prePass.scene = m_mainScene;
-	//prePass.parseScene();
-	//prePass.target = std::make_shared<FBO>(m_winRef.getSize(), prePassLayout);
-	//prePass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
-	//prePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
-	//prePass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
-	//prePass.UBOmanager.setCachedValue("b_camera", "u_view", prePass.camera.view);
-	//prePass.UBOmanager.setCachedValue("b_camera", "u_projection", prePass.camera.projection);
-	//m_mainRenderer.addDepthPass(prePass);
-	//m_previousRenderPassIndex++;
-	//vampireMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
-	//floorMaterial->setValue("u_depthMap", prePass.target->getTarget(0));
-
-
 	//Shadow pass
 	DepthPass shadowPass;
 	shadowPass.scene = m_mainScene;
@@ -321,11 +300,11 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	m_mainRenderer.addDepthPass(shadowPass);
 	m_previousRenderPassIndex++;
 
-	vampireMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
-	floorMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
+	//vampireMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
+	//floorMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
 
-	vampireMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
-	floorMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
+	//vampireMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
+	//floorMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
 	//ShadowPass setup
 
 
@@ -445,6 +424,8 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	lightPassMaterial->setValue("u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
 	lightPassMaterial->setValue("u_depthTexture", GPass.target->getTarget(4));
 	lightPassMaterial->setValue("u_skyBoxTexture", skyBoxPass.target->getTarget(0));
+	lightPassMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
+	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
 	screen.material = lightPassMaterial;
 	m_screenScene->m_actors.push_back(screen);
@@ -589,55 +570,55 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	////Sepia Pass Setup
 
 
-	//Blur Pass : Need to comment setting of uBlurRadius in onUpdate if commenting this out
-	std::shared_ptr<Material> blurMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
-	blurMaterial->setValue("u_blurRadius", m_blurRadius);
-	screen.material = blurMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Blur Pass : Need to comment setting of uBlurRadius in onUpdate if commenting this out
+	//std::shared_ptr<Material> blurMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
+	//blurMaterial->setValue("u_blurRadius", m_blurRadius);
+	//screen.material = blurMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass blurPass;
-	blurPass.scene = m_screenScene;
-	blurPass.parseScene(); //sorts UBOs for each actor
-	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass blurPass;
+	//blurPass.scene = m_screenScene;
+	//blurPass.parseScene(); //sorts UBOs for each actor
+	//blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_view", blurPass.camera.view);
-	blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
+	//blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//blurPass.UBOmanager.setCachedValue("b_camera2D", "u_view", blurPass.camera.view);
+	//blurPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", blurPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(blurPass);
-	m_previousRenderPassIndex++;
-	m_blurPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Blur Pass Completed
+	//m_mainRenderer.addRenderPass(blurPass);
+	//m_previousRenderPassIndex++;
+	//m_blurPassIndex = m_previousRenderPassIndex;
+	//m_screenScene.reset(new Scene);
+	////Blur Pass Completed
 
 
-	//Depth of Field Pass
-	std::shared_ptr<Material> dofMaterial;
-	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
-	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4)); //Main pass has depth buffer attached to target(1).
-	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass hasdepth buffer attached to target(1).
-	screen.material = dofMaterial;
-	m_screenScene->m_actors.push_back(screen);
+	////Depth of Field Pass
+	//std::shared_ptr<Material> dofMaterial;
+	//SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
+	//dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	//dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4)); //Main pass has depth buffer attached to target(1).
+	//dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass hasdepth buffer attached to target(1).
+	//screen.material = dofMaterial;
+	//m_screenScene->m_actors.push_back(screen);
 
-	RenderPass dofPass;
-	dofPass.scene = m_screenScene;
-	dofPass.parseScene(); //sorts UBOs for each actor
-	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//RenderPass dofPass;
+	//dofPass.scene = m_screenScene;
+	//dofPass.parseScene(); //sorts UBOs for each actor
+	//dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	//dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
-	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
+	//dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
+	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
 
-	m_mainRenderer.addRenderPass(dofPass);
-	m_previousRenderPassIndex++;
-	m_dofPassIndex = m_previousRenderPassIndex;
-	m_screenScene.reset(new Scene);
-	//Depth of Field pass completed
+	//m_mainRenderer.addRenderPass(dofPass);
+	//m_previousRenderPassIndex++;
+	//m_dofPassIndex = m_previousRenderPassIndex;
+	//m_screenScene.reset(new Scene);
+	////Depth of Field pass completed
 
 
 	//Vignette Pass
@@ -744,18 +725,22 @@ void Lab5::onUpdate(float timestep)
 
 	lightPassMaterial->setValue("u_viewPos", camera.translation);
 
+
 	glm::vec3 lightPosition = (m_shadowMapVars.centre - m_mainScene->m_directionalLights.at(0).direction) * m_shadowMapVars.distanceAlongLightVector;
 	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
 	m_mainRenderer.getDepthPass(0).camera.view = shadowView;
 
 	m_mainRenderer.getDepthPass(0).UBOmanager.setCachedValue("b_lightCamera", "u_view", m_mainRenderer.getDepthPass(0).camera.view);
 
-	auto vampMat = m_mainScene->m_actors.at(vampireIdx).material;
-	floorMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
-	vampMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
+	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
-	floorMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
-	vampMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
+	//auto vampMat = m_mainScene->m_actors.at(vampireIdx).material;
+	//floorMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+	//vampMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+
+	//floorMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
+	//vampMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 }
 
 
