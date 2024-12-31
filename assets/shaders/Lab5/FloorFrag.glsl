@@ -3,6 +3,7 @@
 layout(location = 0) out vec4 gPosition;
 layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gDiffSpec;
+layout(location = 3) out vec4 gSpec;
 
 
 in vec3 vertexNormal;
@@ -97,6 +98,7 @@ void main()
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 0.0);
 	gDiffSpec = vec4( u_albedo, 1.0);
+	gSpec = vec4(0.0f);
 }
 
 float ShadowCalculation()

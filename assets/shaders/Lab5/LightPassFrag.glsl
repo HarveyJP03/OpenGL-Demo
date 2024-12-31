@@ -54,6 +54,10 @@ vec3 getSpotLight(int idx) ;
 uniform sampler2D u_positionTexture;
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_albedoTexture;
+uniform sampler2D u_specularTexture;
+
+uniform sampler2D u_skyBoxTexture;
+uniform sampler2D u_depthTexture;
 
 
 //global vars
@@ -71,7 +75,7 @@ void main()
 	fragmentPos = texture(u_positionTexture, texCoord).rgb;
 	normal = texture(u_normalTexture, texCoord).rgb;
 	albedoColour = texture(u_albedoTexture, texCoord).rgb;
-	specularStrength = texture(u_albedoTexture, texCoord).a;
+	specularStrength = texture(u_specularTexture, texCoord).r;
 	
 	vec3 result = vec3(0.0, 0.0, 0.0); 
     viewDir = normalize(u_viewPos - fragmentPos);
@@ -88,8 +92,17 @@ void main()
 	{
 		//result += getSpotLight(i);
 	}
+
+	float depth = texture(u_depthTexture, texCoord).r;
+	if(depth >= 0.9999f)
+	{
+		colour = vec4(texture(u_skyBoxTexture, texCoord).rgb, 1.0);
+	}
+	else
+	{
+		colour = vec4(result, 1.0) * vec4(albedoColour, 1.0);
+	}
 	      
-	colour = vec4(result, 1.0) * vec4(albedoColour, 1.0);
 	//colour = vec4(specularStrength);
 }
 
