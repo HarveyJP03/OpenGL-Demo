@@ -50,9 +50,6 @@ private:
 	std::shared_ptr<Material> vampireMaterial;
 	std::shared_ptr<Material> floorMaterial;
 
-	std::vector<int> vampireIdxs;
-
-
 	Renderer m_mainRenderer;
 	// Actor positions for ease of use and to avoid additonal magic numbers
 	size_t modelIdx;

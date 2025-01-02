@@ -90,9 +90,7 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 
 	Actor floor;
 	floor.geometry = gridVAO;
-	//.depthGeometry = floorDepthVAO;
 	floor.material = floorMaterial;
-	//floor.depthMaterial = depthPassMaterial;
 	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
 	floor.recalc();
 	floorIdx = m_mainScene->m_actors.size();
@@ -100,9 +98,7 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 
 	Actor floor2;
 	floor2.geometry = gridVAO;
-	//floor2.depthGeometry = floorDepthVAO;
 	floor2.material = floorMaterial;
-	//floor2.depthMaterial = depthPassMaterial;
 	floor2.translation = glm::vec3(-50.0f, -5.f, -100.0f);
 	floor2.recalc();
 	m_mainScene->m_actors.push_back(floor2);
@@ -249,9 +245,6 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	skyBox.material = skyBoxMaterial;
 	skyBoxMaterial->setValue("u_skyBoxView", glm::inverse(skyBox.transform));
 	skyBoxMaterial->setValue("u_skyBox", cubeMap);
-	//skyBoxIdx = m_mainScene->m_actors.size();
-	//m_mainScene->m_actors.push_back(skyBox);
-
 	//Created SkyBox
 
 	Actor camera;
@@ -298,12 +291,6 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addDepthPass(shadowPass);
 	m_previousRenderPassIndex++;
-
-	//vampireMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
-	//floorMaterial->setValue("u_lightSpaceTransform", shadowPass.camera.projection * shadowPass.camera.view);
-
-	//vampireMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
-	//floorMaterial->setValue("u_shadowMap", shadowPass.target->getTarget(0));
 	//ShadowPass setup
 
 
@@ -335,33 +322,8 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 	m_previousRenderPassIndex++;
 	//Gpass setup
 
-
-	//RenderPass mainPass;
-	//mainPass.scene = m_mainScene;
-	//mainPass.parseScene();
-	//mainPass.target = std::make_shared<FBO>(m_winRef.getSize(), GBufferLayout); //Target is custom FBO
-	//mainPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
-	//mainPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
-	//mainPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
-	//mainPass.UBOmanager.setCachedValue("b_camera", "u_view", mainPass.camera.view);
-	//mainPass.UBOmanager.setCachedValue("b_camera", "u_projection", mainPass.camera.projection);
-	//mainPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
-	//mainPass.UBOmanager.setCachedValue("b_lights", "dLight.colour", m_mainScene->m_directionalLights.at(0).colour);
-	//mainPass.UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
-
-	//for (int i = 0; i < m_numPointLights; i++)
-	//{
-	//	bool passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
-	//	passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
-	//	passed = mainPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
-	//}
-
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(GPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f), 0.5f);
 	m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(GPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
-
-	//m_mainRenderer.addRenderPass(mainPass);
-	//m_previousRenderPassIndex++;
-	////Main Pass set up
 
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
@@ -729,13 +691,6 @@ void Lab5::onUpdate(float timestep)
 
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
-
-	//auto vampMat = m_mainScene->m_actors.at(vampireIdx).material;
-	//floorMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
-	//vampMat->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
-
-	//floorMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
-	//vampMat->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 }
 
 

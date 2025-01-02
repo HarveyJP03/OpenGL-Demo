@@ -11,13 +11,9 @@ layout (std140, binding = 1) uniform b_camera
 	uniform vec3 u_viewPos;
 };
 
-uniform mat4 u_lightSpaceTransform;
-
 out vec3 fragmentPos;
 out vec3 vertexNormal;
 out vec2 texCoord;
-out vec4 fragmentPosLightSpace;
-
 
 uniform mat4 u_model;
 
@@ -27,8 +23,4 @@ void main()
 	vertexNormal = vec3(0.0f, 1.0f, 0.0f);
 	texCoord = a_texCoord;
 	gl_Position = u_projection * u_view * vec4(fragmentPos,1.0);
-
-	//Shadow Mapping
-	fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
-
 }
