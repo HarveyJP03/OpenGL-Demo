@@ -5,7 +5,6 @@ layout(location = 1) in vec3 a_vertexNormal;
 layout(location = 2) in vec2 a_texCoord;
 layout(location = 3) in vec3 a_tangent;
 
-
 layout (std140, binding = 1) uniform b_camera
 {
 	uniform mat4 u_view;
@@ -16,11 +15,8 @@ layout (std140, binding = 1) uniform b_camera
 out vec3 fragmentPos;
 out vec2 texCoord;
 out mat3 TBN; //matrix to change tangents from tangent space to world space (in line with object surface)
-//out vec4 fragmentPosLightSpace;
 
 uniform mat4 u_model;
-
-uniform mat4 u_lightSpaceTransform;
 
 void main()
 {
@@ -34,8 +30,5 @@ void main()
 	T = normalize(T - dot(T, vertexNormal) * vertexNormal); //Make sure TBN is still orthogonal, since tangents are averaged they TBN can be slightly off
 	vec3 B = normalize(cross(vertexNormal, T));
 	TBN = mat3(T, B, vertexNormal);
-	
-	//Shadow Mapping
-	//fragmentPosLightSpace = u_lightSpaceTransform * vec4(fragmentPos, 1.0);
 
 }

@@ -152,7 +152,6 @@ Lab5::Lab5(GLFWWindowImpl& win) : Layer(win)
 
 
 	vampireMaterial = std::make_shared<Material>(vampireShader);
-	//vampireMaterial->setValue("u_albedo", m_colour);
 	vampireMaterial->setValue("u_specularMap", vampireSpecular);
 	vampireMaterial->setValue("u_albedoMap", vampireAlbedo);
 	vampireMaterial->setValue("u_normalMap", vampireNormal);
@@ -721,15 +720,11 @@ void Lab5::onUpdate(float timestep)
 	skyBoxpass.UBOmanager.setCachedValue("b_camera", "u_view", skyBoxpass.camera.view);
 	skyBoxpass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
 
-
-
 	lightPassMaterial->setValue("u_viewPos", camera.translation);
-
 
 	glm::vec3 lightPosition = (m_shadowMapVars.centre - m_mainScene->m_directionalLights.at(0).direction) * m_shadowMapVars.distanceAlongLightVector;
 	glm::mat4 shadowView = glm::lookAt(lightPosition, m_shadowMapVars.centre, m_shadowMapVars.up);
 	m_mainRenderer.getDepthPass(0).camera.view = shadowView;
-
 	m_mainRenderer.getDepthPass(0).UBOmanager.setCachedValue("b_lightCamera", "u_view", m_mainRenderer.getDepthPass(0).camera.view);
 
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));

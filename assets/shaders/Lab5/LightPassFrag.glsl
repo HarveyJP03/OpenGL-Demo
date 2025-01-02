@@ -119,7 +119,7 @@ float ShadowCalculation()
 	float currentDepth = projCoords.z;
 
 	float shadow = 0.0f;
-	float bias = 0.00015f;
+	float bias = 0.0015f;
 
 	vec2 texelSize = 1.0 / textureSize(u_shadowMap, 0);
 	float samplesTaken = 0.0f;
