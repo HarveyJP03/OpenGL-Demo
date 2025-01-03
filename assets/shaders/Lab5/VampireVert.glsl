@@ -30,5 +30,4 @@ void main()
 	T = normalize(T - dot(T, vertexNormal) * vertexNormal); //Make sure TBN is still orthogonal, since tangents are averaged they TBN can be slightly off
 	vec3 B = normalize(cross(vertexNormal, T));
 	TBN = mat3(T, B, vertexNormal);
-
 }
