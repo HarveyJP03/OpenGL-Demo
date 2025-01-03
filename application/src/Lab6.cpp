@@ -64,8 +64,9 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	std::vector<unsigned int> floor_indices = grid->getIndices();
 
 	ShaderDescription floorShaderDesc; //Path to source files and shader type, used to load the shader.
-	floorShaderDesc.type = ShaderType::rasterization;
+	floorShaderDesc.type = ShaderType::geometry;
 	floorShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/FloorVert.glsl";
+	floorShaderDesc.geometrySrcPath = "./assets/shaders/Lab6/FloorGeo.glsl";
 	floorShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/FloorFrag.glsl";
 
 	std::shared_ptr<Shader> floorShader;

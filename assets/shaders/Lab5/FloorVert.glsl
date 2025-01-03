@@ -11,16 +11,16 @@ layout (std140, binding = 1) uniform b_camera
 	uniform vec3 u_viewPos;
 };
 
-out vec3 fragmentPos;
-out vec3 vertexNormal;
-out vec2 texCoord;
+out vec3 vs_fragmentPos;
+out vec3 vs_vertexNormal;
+out vec2 vs_texCoord;
 
 uniform mat4 u_model;
 
 void main()
 {
-	fragmentPos = vec3(u_model * vec4(a_vertexPosition, 1.0));
-	vertexNormal = vec3(0.0f, 1.0f, 0.0f);
-	texCoord = a_texCoord;
-	gl_Position = u_projection * u_view * vec4(fragmentPos,1.0);
+	vs_fragmentPos = vec3(u_model * vec4(a_vertexPosition, 1.0));
+	vs_vertexNormal = vec3(0.0f, 1.0f, 0.0f);
+	vs_texCoord = a_texCoord;
+	gl_Position = u_projection * u_view * vec4(vs_fragmentPos,1.0);
 }
