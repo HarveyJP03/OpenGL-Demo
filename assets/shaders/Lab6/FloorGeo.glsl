@@ -3,7 +3,7 @@
 layout(triangles) in ;
 layout(triangle_strip, max_vertices = 3) out ;
 
-in vec3 vs_fragmentPos[]; //Array as this takes in the primitive 3 points
+in vec3 vs_fragmentPos[]; //Array as this takes in the primitives 3 points
 in vec2 vs_texCoord[];
 
 out vec3 fragmentPos;
