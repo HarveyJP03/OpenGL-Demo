@@ -168,18 +168,18 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	//**Vampire Created
 
 
-	//for (int i = 0; i < 40; i++)
-	//{
-	//	Actor vamp;
-	//	vamp.geometry = vampireVAO;
-	//	vamp.depthGeometry = vampireDepthVAO;
-	//	vamp.material = vampireMaterial;
-	//	vamp.depthMaterial = depthPassMaterial;
-	//	vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -80.0));
-	//	vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
-	//	vamp.recalc();
-	//	m_mainScene->m_actors.push_back(vamp);
-	//}
+	for (int i = 0; i < 10; i++)
+	{
+		Actor vamp;
+		vamp.geometry = vampireVAO;
+		vamp.depthGeometry = vampireDepthVAO;
+		vamp.material = vampireMaterial;
+		vamp.depthMaterial = depthPassMaterial;
+		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -60.0));
+		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
+		vamp.recalc();
+		m_mainScene->m_actors.push_back(vamp);
+	}
 
 	DirectionalLight dl;
 	dl.direction = glm::normalize(m_lightDirection);
@@ -255,8 +255,8 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	std::vector<float> billboardPositions; //GEO shader for billboards will create all billboards in scene, pass it all positions and for each position it will create a billboard
 	
 	std::shared_ptr<VAO> billboardVAO;
-	std::vector<uint32_t> billboardIndices = { 0, 1, 2, 3, 4 };
-	for (int i = 0; i < 5; i++)
+	std::vector<uint32_t> billboardIndices = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	for (int i = 0; i < 10; i++)
 	{
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0f, 50.0f)); //x
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(6.0f, 6.0f)); //y
@@ -279,12 +279,15 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 
 	std::shared_ptr<Texture> billboardTexture;
 	billboardTexture = std::make_shared<Texture>("./assets/textures/Billboards/bigtree2.png");
-
 	billBoardMaterial->setValue("u_billboardImage", billboardTexture);
 
 	Actor billboard;
 	billboard.geometry = billboardVAO;
 	billboard.material = billBoardMaterial;
+	/*Shadows for billboards
+	 - Geo shader in shadow pass(for billboards only) that does same thing billboardGeo does to points, turns them into quads
+	   Read alpha values and discard what we dont want in shaodw pass for billboards fragment shader?
+	*/
 	m_mainScene->m_actors.push_back(billboard);
 
 	//Depth Only Pass
@@ -301,7 +304,6 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 		{AttachmentType::ColourHDR, true},
 		{AttachmentType::Depth, true}
 	};
-
 
 	//Shadow pass
 	DepthPass shadowPass;
