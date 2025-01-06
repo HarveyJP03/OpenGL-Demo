@@ -22,7 +22,7 @@ void main()
 	vec3 up = vec3(0.0f, 1.0f, 0.0f);
 	vec3 right = normalize(cross(toCamera, up)); //Perpendicular to the up vector and the vector from camera to point
 
-	float size = 2.0f;
+	float size = 12.0f;
 	vec3 corner0 = pos - right * size - up * size; //Bottom Left
 	vec3 corner1 = pos + right * size - up * size; //Bottom Right
 	vec3 corner2 = pos - right * size + up * size; //Top-Left

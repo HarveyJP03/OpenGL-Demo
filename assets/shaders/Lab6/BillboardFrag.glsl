@@ -13,14 +13,22 @@ in vec2 texCoord;
 vec3 normal ;
 float specularStrength  = 0.25f ;
 
+uniform sampler2D u_billboardImage;
+
 void main()
 {	
 	vec3 result = vec3(0.0, 0.0, 0.0); 
 	normal = normalize(vertexNormal) ;
+	vec4 colour = texture(u_billboardImage, texCoord);
+
+	float alphaMask = step(0.0, colour.a);
+	if(colour.rgb == vec3(0.0, 0.0, 0.0)) discard;
 	      
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 0.0);
-	gDiffSpec = vec4( 1.0, 0.0, 1.0, 1.0);
+	gDiffSpec = colour;
 	gSpec = vec4(specularStrength);
+
+
 }
 

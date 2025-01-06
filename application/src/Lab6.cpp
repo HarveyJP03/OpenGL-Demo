@@ -168,18 +168,18 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	//**Vampire Created
 
 
-	for (int i = 0; i < 40; i++)
-	{
-		Actor vamp;
-		vamp.geometry = vampireVAO;
-		vamp.depthGeometry = vampireDepthVAO;
-		vamp.material = vampireMaterial;
-		vamp.depthMaterial = depthPassMaterial;
-		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -80.0));
-		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
-		vamp.recalc();
-		m_mainScene->m_actors.push_back(vamp);
-	}
+	//for (int i = 0; i < 40; i++)
+	//{
+	//	Actor vamp;
+	//	vamp.geometry = vampireVAO;
+	//	vamp.depthGeometry = vampireDepthVAO;
+	//	vamp.material = vampireMaterial;
+	//	vamp.depthMaterial = depthPassMaterial;
+	//	vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -80.0));
+	//	vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
+	//	vamp.recalc();
+	//	m_mainScene->m_actors.push_back(vamp);
+	//}
 
 	DirectionalLight dl;
 	dl.direction = glm::normalize(m_lightDirection);
@@ -258,9 +258,9 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	std::vector<uint32_t> billboardIndices = { 0, 1, 2, 3, 4 };
 	for (int i = 0; i < 5; i++)
 	{
-		billboardPositions.push_back(Randomiser::uniformFloatBetween(-30.0f, 30.0f)); //x
-		billboardPositions.push_back(Randomiser::uniformFloatBetween(0.0f, 8.0f)); //y
-		billboardPositions.push_back(Randomiser::uniformFloatBetween(-30.0f, -35.0f)); //z
+		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0f, 50.0f)); //x
+		billboardPositions.push_back(Randomiser::uniformFloatBetween(6.0f, 6.0f)); //y
+		billboardPositions.push_back(Randomiser::uniformFloatBetween(-70.0, -80.0f)); //z
 	}
 	billboardVAO = std::make_shared<VAO>(billboardIndices);
 	billboardVAO->addVertexBuffer(billboardPositions, { {GL_FLOAT, 3} });
@@ -276,6 +276,11 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> billBoardMaterial;
 	billBoardMaterial = std::make_shared<Material>(billboardShader);
 	billBoardMaterial->setPrimitive(GL_POINTS);
+
+	std::shared_ptr<Texture> billboardTexture;
+	billboardTexture = std::make_shared<Texture>("./assets/textures/Billboards/bigtree2.png");
+
+	billBoardMaterial->setValue("u_billboardImage", billboardTexture);
 
 	Actor billboard;
 	billboard.geometry = billboardVAO;
