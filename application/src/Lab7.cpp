@@ -90,6 +90,8 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 
 	floorMaterial = std::make_shared<Material>(floorShader);
 	floorMaterial->setValue("u_albedo", m_floorColour);
+	floorMaterial->setValue("u_tessLevel", m_floorTessLevel);
+
 	floorMaterial->setPrimitive(GL_PATCHES);
 
 	Actor floor;
@@ -687,6 +689,7 @@ void Lab7::onUpdate(float timestep)
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
+	floorMat->setValue("u_tessLevel", m_floorTessLevel);
 
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
@@ -747,7 +750,7 @@ void Lab7::onUpdate(float timestep)
 
 void Lab7::onImGUIRender()
 {
-	float ms = 1000.0f / ImGui::GetIO().Framerate; ;  //milisecconds
+	float ms = 1000.0f / ImGui::GetIO().Framerate; ;  //milliseconds
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -760,6 +763,7 @@ void Lab7::onImGUIRender()
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+	ImGui::DragFloat("Tess Level", (float*)&m_floorTessLevel, 0.1f, 1.0f);
 
 	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);

@@ -7,6 +7,7 @@ layout(location = 3) out vec4 gSpec;
 
 uniform vec3 u_albedo;
 
+
 in vec3 fragmentPos;
 in vec3 vertexNormal;
 in vec2 texCoord;

@@ -1,6 +1,6 @@
 #version 460 core
 			
-layout(triangles, equal_spacing, ccw) in;
+layout(triangles, fractional_odd_spacing, ccw) in;
 
 in vec3 tcs_fragmentPos[];
 in vec2 tcs_texCoord[];
