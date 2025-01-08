@@ -20,5 +20,6 @@ void main()
 {
 	vs_fragmentPos = vec3(u_model * vec4(a_vertexPosition, 1.0));
 	vs_texCoord = a_texCoord;
-	gl_Position = u_projection * u_view * vec4(vs_fragmentPos,1.0);
+	//gl_Position = u_projection * u_view * vec4(vs_fragmentPos,1.0);
+	gl_Position = vec4(vs_fragmentPos,1.0);
 }

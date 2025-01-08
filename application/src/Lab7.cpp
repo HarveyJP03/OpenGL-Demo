@@ -64,8 +64,10 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	std::vector<unsigned int> floor_indices = grid->getIndices();
 
 	ShaderDescription floorShaderDesc; //Path to source files and shader type, used to load the shader.
-	floorShaderDesc.type = ShaderType::geometry;
+	floorShaderDesc.type = ShaderType::tessellationAndGeometry;
 	floorShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/FloorVert.glsl";
+	floorShaderDesc.controlSrcPath = "./assets/shaders/Lab7/FloorTCS.glsl";
+	floorShaderDesc.evaluationSrcPath = "./assets/shaders/Lab7/FloorTES.glsl";
 	floorShaderDesc.geometrySrcPath = "./assets/shaders/Lab6/FloorGeo.glsl";
 	floorShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/FloorFrag.glsl";
 
@@ -88,6 +90,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 
 	floorMaterial = std::make_shared<Material>(floorShader);
 	floorMaterial->setValue("u_albedo", m_floorColour);
+	floorMaterial->setPrimitive(GL_PATCHES);
 
 	Actor floor;
 	floor.geometry = gridVAO;
