@@ -103,7 +103,6 @@ void main()
 		colour = vec4(result, 1.0) * vec4(albedoColour, 1.0);
 	}
 	      
-	//colour = vec4(specularStrength);
 }
 
 float ShadowCalculation()

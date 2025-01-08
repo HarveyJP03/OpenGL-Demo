@@ -260,7 +260,7 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	{
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0f, 50.0f)); //x
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(6.0f, 6.0f)); //y
-		billboardPositions.push_back(Randomiser::uniformFloatBetween(-70.0, -80.0f)); //z
+		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0, -80.0f)); //z
 	}
 	billboardVAO = std::make_shared<VAO>(billboardIndices);
 	billboardVAO->addVertexBuffer(billboardPositions, { {GL_FLOAT, 3} });
@@ -284,10 +284,20 @@ Lab6::Lab6(GLFWWindowImpl& win) : Layer(win)
 	Actor billboard;
 	billboard.geometry = billboardVAO;
 	billboard.material = billBoardMaterial;
-	/*Shadows for billboards
-	 - Geo shader in shadow pass(for billboards only) that does same thing billboardGeo does to points, turns them into quads
-	   Read alpha values and discard what we dont want in shaodw pass for billboards fragment shader?
-	*/
+
+	ShaderDescription billboardDepthShaderDesc;
+	billboardDepthShaderDesc.type = ShaderType::geometry;
+	billboardDepthShaderDesc.vertexSrcPath = "./assets/shaders/Lab6/BillboardDepthVert.glsl";
+	billboardDepthShaderDesc.geometrySrcPath = "./assets/shaders/Lab6/BillboardDepthGeo.glsl";
+	billboardDepthShaderDesc.fragmentSrcPath = "./assets/shaders/Lab6/BillboardDepthFrag.glsl";
+	std::shared_ptr<Shader> billboardDepthShader = std::make_shared<Shader>(billboardDepthShaderDesc);
+	std::shared_ptr<Material> billboardDepthPassMaterial = std::make_shared<Material>(billboardDepthShader);
+	
+	billboardDepthPassMaterial->setPrimitive(GL_POINTS);
+	billboardDepthPassMaterial->setValue("u_billboardImage", billboardTexture);
+	billboard.depthMaterial = billboardDepthPassMaterial;
+	billboard.depthGeometry = billboardVAO;
+
 	m_mainScene->m_actors.push_back(billboard);
 
 	//Depth Only Pass

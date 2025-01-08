@@ -3,11 +3,10 @@
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-layout (std140, binding = 1) uniform b_camera
+layout (std140, binding = 0) uniform b_lightCamera
 {
 	uniform mat4 u_view;
 	uniform mat4 u_projection;
-	uniform vec3 u_viewPos;
 };
 
 out vec2 texCoord;
@@ -18,7 +17,8 @@ void main()
 {
 	vec3 pos = gl_in[0].gl_Position.xyz; //Get position of point
 	fragmentPos = pos;
-	vec3 toCamera = normalize(u_viewPos - pos); //From camera to billboard position
+	//vec3 toCamera = normalize(u_viewPos - pos); //From camera to billboard position
+	vec3 toCamera = vec3(0.0, 0.0, 1.0);
 	vec3 up = vec3(0.0f, 1.0f, 0.0f);
 	vec3 right = normalize(cross(toCamera, up)); //Perpendicular to the up vector and the vector from camera to point
 
@@ -34,22 +34,18 @@ void main()
 	//Emit Vertices
 	texCoord = vec2(0.0, 0.0);
 	gl_Position = VP * vec4(corner0, 1.0);
-	fragmentPos = corner0;
 	EmitVertex();
 
 	texCoord = vec2(1.0, 0.0);
 	gl_Position = VP * vec4(corner1, 1.0);
-	fragmentPos = corner1;
 	EmitVertex();
 
 	texCoord = vec2(0.0, 1.0);
 	gl_Position = VP * vec4(corner2, 1.0);
-	fragmentPos = corner2;
 	EmitVertex();
 
 	texCoord = vec2(1.0, 1.0);
 	gl_Position = VP * vec4(corner3, 1.0);
-	fragmentPos = corner3;
 	EmitVertex();
 
 	EndPrimitive();
