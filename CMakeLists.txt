@@ -15,6 +15,7 @@ set (PROJECT_HEADER_FILES
 	"application/include/Lab4.hpp"
 	"application/include/Lab5.hpp"
 	"application/include/Lab6.hpp"
+	"application/include/Lab7.hpp"
         "application/include/grid.hpp"       
 )
 
@@ -27,6 +28,7 @@ set (PROJECT_SOURCE_FILES
 	"application/src/Lab4.cpp"
 	"application/src/Lab5.cpp"
 	"application/src/Lab6.cpp"
+	"application/src/Lab7.cpp"
         "application/src/grid.cpp"
 )
 
