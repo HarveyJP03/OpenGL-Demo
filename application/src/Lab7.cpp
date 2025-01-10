@@ -90,14 +90,17 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 
 	floorMaterial = std::make_shared<Material>(floorShader);
 	floorMaterial->setValue("u_albedo", m_floorColour);
-	floorMaterial->setValue("u_tessLevel", m_floorTessLevel);
+
+	std::shared_ptr<Texture> floorHeightMap;
+	floorHeightMap = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
+	floorMaterial->setValue("u_heightMap", floorHeightMap);
 
 	floorMaterial->setPrimitive(GL_PATCHES);
 
 	Actor floor;
 	floor.geometry = gridVAO;
 	floor.material = floorMaterial;
-	floor.translation = glm::vec3(-50.0f, -5.f, -50.0f);
+	floor.translation = glm::vec3(-50.0f, -20.f, 0.0f);
 	floor.recalc();
 	floorIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(floor);
@@ -107,6 +110,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	floor2.material = floorMaterial;
 	floor2.translation = glm::vec3(-50.0f, -5.f, -100.0f);
 	floor2.recalc();
+	floorIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(floor2);
 	//** Floor Created
 
@@ -689,8 +693,6 @@ void Lab7::onUpdate(float timestep)
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_albedo", m_floorColour);
-	floorMat->setValue("u_tessLevel", m_floorTessLevel);
-
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
@@ -763,7 +765,6 @@ void Lab7::onImGUIRender()
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
-	ImGui::DragFloat("Tess Level", (float*)&m_floorTessLevel, 0.005f, 1.0f);
 
 	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);

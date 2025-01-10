@@ -15,7 +15,6 @@ layout (std140, binding = 1) uniform b_camera
 	uniform vec3 u_viewPos;
 };
 
-uniform float u_tessLevel;
 
 float GetTessLevel(float Distance0, float Distance1);
 
@@ -53,13 +52,17 @@ float GetTessLevel(float Distance0, float Distance1)
 	//return linear;
 
 	//Step
-	if(averageDistance >= u_tessLevel)
+	if(averageDistance >= 80.0f)
 	{
 		//return 1.0f;
 	}
-	else if( averageDistance > u_tessLevel / 2.0f )
+	else if( averageDistance > 40.0f )
 	{
 		//return 8.0f;
+	}
+	else if( averageDistance > 20.0f )
+	{
+		//return 32.0f;
 	}
 	else
 	{
@@ -67,7 +70,7 @@ float GetTessLevel(float Distance0, float Distance1)
 	}
 
 	//Exponential
-	float tess = exp((averageDistance - 50.0f) * -0.1f);
+	float tess = exp((averageDistance - 100.0f) * -0.15f);
 	return tess;
 
 
