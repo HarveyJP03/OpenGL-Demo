@@ -5,10 +5,13 @@ layout(triangle_strip, max_vertices = 3) out ;
 
 in vec3 tes_fragmentPos[]; //Array as this takes in the primitives 3 points
 in vec2 tes_texCoord[];
+in vec3 tes_CDMnormal[];
+in float tes_heightScale[];
 
 out vec3 fragmentPos;
 out vec3 vertexNormal;
 out vec2 texCoord;
+out float heightScale;
 
 layout (std140, binding = 1) uniform b_camera
 {
@@ -21,12 +24,13 @@ vec3 getNormal();
 
 void main()
 {
+	heightScale = tes_heightScale[0];
 	for(int i = 0; i < 3; i++) //Loop through vertices, and pass them through to frag shader unchanged
 	{
 		texCoord = tes_texCoord[i];
 		fragmentPos = tes_fragmentPos[i];
 		vertexNormal = getNormal();
-		//gl_Position = gl_in[i].gl_Position; //gl_in stores gl_Position for each vertex (built in)
+		//vertexNormal = tes_CDMnormal[i];
 		gl_Position = u_projection * u_view * vec4(fragmentPos, 1.0);
 		
 		EmitVertex();

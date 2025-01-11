@@ -51,7 +51,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	Actor cube;
 	cube.geometry = cubeVAO;
 	cube.material = cubeMaterial;
-	cube.translation = glm::vec3(0.f, -5.f, -9.f);
+	cube.translation = glm::vec3(0.f, 5.f, -9.f);
 	cube.scale = glm::vec3(0.25f);
 	cube.recalc();
 	modelIdx = m_mainScene->m_actors.size();
@@ -169,7 +169,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	vampire.depthGeometry = vampireDepthVAO;
 	vampire.material = vampireMaterial;
 	vampire.depthMaterial = depthPassMaterial;
-	vampire.translation = glm::vec3(0.0f, -5.0f, -11.0f);
+	vampire.translation = glm::vec3(0.0f, 5.0f, -11.0f);
 	vampire.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 	vampire.recalc();
 	vampireIdx = m_mainScene->m_actors.size();
@@ -184,7 +184,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 		vamp.depthGeometry = vampireDepthVAO;
 		vamp.material = vampireMaterial;
 		vamp.depthMaterial = depthPassMaterial;
-		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -5.0f, Randomiser::uniformFloatBetween(-12.0, -60.0));
+		vamp.translation = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), 2.5f, Randomiser::uniformFloatBetween(-12.0, -60.0));
 		vamp.scale = glm::vec3(5.0f, 5.0f, 5.0f);
 		vamp.recalc();
 		m_mainScene->m_actors.push_back(vamp);
@@ -259,6 +259,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 
 	Actor camera;
 	cameraIdx = m_mainScene->m_actors.size();
+	camera.translation = glm::vec3(0.0f, 10.0f, 0.0f);
 	m_mainScene->m_actors.push_back(camera);
 
 	std::vector<float> billboardPositions; //GEO shader for billboards will create all billboards in scene, pass it all positions and for each position it will create a billboard
@@ -268,7 +269,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	for (int i = 0; i < 10; i++)
 	{
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0f, 50.0f)); //x
-		billboardPositions.push_back(Randomiser::uniformFloatBetween(6.0f, 6.0f)); //y
+		billboardPositions.push_back(Randomiser::uniformFloatBetween(16.0f, 16.0f)); //y
 		billboardPositions.push_back(Randomiser::uniformFloatBetween(-50.0, -80.0f)); //z
 	}
 	billboardVAO = std::make_shared<VAO>(billboardIndices);
@@ -379,7 +380,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	m_previousRenderPassIndex++;
 	//Gpass setup
 
-	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(GPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f), 0.5f);
+	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(GPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f) * 2.0f, 2.5f);
 	m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(GPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 
 	float width = m_winRef.getWidthf();
