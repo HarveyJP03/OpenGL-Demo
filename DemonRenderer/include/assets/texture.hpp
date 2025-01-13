@@ -23,7 +23,7 @@ class Texture : public ManagedTexture
 {
 public:
 	Texture() = delete; //!< Deleted default constructor
-	explicit Texture(const char* filepath); //!< Constructor which takes a path to an image file to be loaded
+	explicit Texture(const char* filepath, float param = GL_REPEAT); //!< Constructor which takes a path to an image file to be loaded
 	explicit Texture(const TextureDescription& desc); //!< Constructor which takes a TextureDescription
 	Texture(Texture& other) = delete; //!< Deleted copy constructor
 	Texture(Texture&& other) = delete; //!< Deleted move constructor
@@ -45,5 +45,5 @@ private:
 	uint32_t m_channels{ 0 }; //!< Number of channels
 	bool m_isHDR{ false }; //!< Is the texture high dynamic range
 private:
-	void init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR); //!< Initialise the texture
+	void init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR, float param = GL_REPEAT); //!< Initialise the texture
 };

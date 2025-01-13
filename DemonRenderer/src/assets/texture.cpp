@@ -4,7 +4,7 @@
 #include "core/log.hpp"
 
 
-Texture::Texture(const char* filepath)
+Texture::Texture(const char* filepath, float param)
 {
 	stbi_set_flip_vertically_on_load(true);
 
@@ -13,7 +13,7 @@ Texture::Texture(const char* filepath)
 	unsigned char* data = stbi_load(filepath, &width, &height, &channels, 0);
 
 	if (channels == 1) spdlog::error("1 channnel: {}", filepath);
-	if (data) init(width, height, channels, data, false);
+	if (data) init(width, height, channels, data, false, param);
 	else spdlog::error("Failed to load texture from filepath: {}", filepath);
 	stbi_image_free(data);
 }
@@ -38,12 +38,12 @@ void Texture::edit(uint32_t xOffset, uint32_t yOffset, uint32_t width, uint32_t 
 
 
 
-void Texture::init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR)
+void Texture::init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR, float param)
 {
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
 
-	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, param);
+	glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, param);
 
 	glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

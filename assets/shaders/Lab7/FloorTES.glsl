@@ -22,6 +22,7 @@ void main()
 	tes_texCoord = interpolate2D(tcs_texCoord[0], tcs_texCoord[1], tcs_texCoord[2]);
 
 	float height = texture(u_heightMap, tes_texCoord).r;
+
 	tes_heightScale = 10.0f;
 	tes_fragmentPos.y = height * tes_heightScale;
 

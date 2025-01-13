@@ -91,7 +91,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	floorMaterial = std::make_shared<Material>(floorShader);
 
 	std::shared_ptr<Texture> floorHeightMap;
-	floorHeightMap = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
+	floorHeightMap = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png", GL_CLAMP_TO_EDGE);
 	floorMaterial->setValue("u_heightMap", floorHeightMap);
 
 	std::shared_ptr<Texture> floorTexture;
