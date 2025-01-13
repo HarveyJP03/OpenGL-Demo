@@ -112,5 +112,6 @@ private:
 	bool m_wireFrame = false;
 	float m_focusDistance = 0.25f;
 	glm::vec3 m_lightDirection{ glm::vec3(-0.2, -1.0, -0.5) };
+	float m_remapRange = 0.0f;
 };
 

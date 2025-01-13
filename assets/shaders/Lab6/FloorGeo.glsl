@@ -29,8 +29,8 @@ void main()
 	{
 		texCoord = tes_texCoord[i];
 		fragmentPos = tes_fragmentPos[i];
-		vertexNormal = getNormal();
-		//vertexNormal = tes_CDMnormal[i];
+		//vertexNormal = getNormal();
+		vertexNormal = tes_CDMnormal[i];
 		gl_Position = u_projection * u_view * vec4(fragmentPos, 1.0);
 		
 		EmitVertex();

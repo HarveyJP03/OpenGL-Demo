@@ -89,11 +89,18 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	floorDepthVAO->addVertexBuffer(grid->getVertexPositions(), depthLayout);
 
 	floorMaterial = std::make_shared<Material>(floorShader);
-	floorMaterial->setValue("u_albedo", m_floorColour);
 
 	std::shared_ptr<Texture> floorHeightMap;
 	floorHeightMap = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
 	floorMaterial->setValue("u_heightMap", floorHeightMap);
+
+	std::shared_ptr<Texture> floorTexture;
+	floorTexture = std::make_shared<Texture>("./assets/textures/HeightMaps/mountain-rock.png");
+	floorMaterial->setValue("u_terrainTexture", floorTexture);
+
+	std::shared_ptr<Texture> floorGrassTexture;
+	floorGrassTexture = std::make_shared<Texture>("./assets/textures/HeightMaps/seamless-grasspng.png");
+	floorMaterial->setValue("u_terrainGrassTexture", floorGrassTexture);
 
 	floorMaterial->setPrimitive(GL_PATCHES);
 
@@ -204,7 +211,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 		if (i == 0)
 		{
 			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
-			pointLight.position = glm::vec3(0.0f, -5.f, -9.0f);
+			pointLight.position = glm::vec3(0.0f, 5.f, -9.0f);
 			pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
 		}
 
@@ -693,15 +700,16 @@ void Lab7::onUpdate(float timestep)
 	cubeMat->setValue("u_albedo", m_colour);
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
-	floorMat->setValue("u_albedo", m_floorColour);
+	//floorMat->setValue("u_albedo", m_floorColour);
+	floorMat->setValue("u_remapRange", m_remapRange);
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
 	for (int i = 0; i < m_numPointLights; i++)
 	{
-		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
-		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4, -9.0f);
+		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
+		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
 
 		m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
 		m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
@@ -766,6 +774,7 @@ void Lab7::onImGUIRender()
 	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+	ImGui::DragFloat("Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
 
 	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);

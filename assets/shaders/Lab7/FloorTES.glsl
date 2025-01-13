@@ -23,15 +23,15 @@ void main()
 
 	float height = texture(u_heightMap, tes_texCoord).r;
 	tes_heightScale = 10.0f;
-	tes_fragmentPos.y = (height * tes_heightScale);
+	tes_fragmentPos.y = height * tes_heightScale;
 
-	float right = textureOffset(u_heightMap, tes_texCoord, ivec2(1,0)).r * tes_heightScale;
-	float left = textureOffset(u_heightMap, tes_texCoord, ivec2(-1,0)).r * tes_heightScale;
-	float up = textureOffset(u_heightMap, tes_texCoord, ivec2(0,-1)).r * tes_heightScale;
-	float down = textureOffset(u_heightMap, tes_texCoord, ivec2(0,1)).r * tes_heightScale;
+	float right = textureOffset(u_heightMap, tes_texCoord, ivec2(1,0)).r * (tes_heightScale * 8.0f);
+	float left = textureOffset(u_heightMap, tes_texCoord, ivec2(-1,0)).r * (tes_heightScale * 8.0f);
+	float up = textureOffset(u_heightMap, tes_texCoord, ivec2(0,1)).r * (tes_heightScale * 8.0f);
+	float down = textureOffset(u_heightMap, tes_texCoord, ivec2(0,-1)).r * (tes_heightScale * 8.0f);
 
 	float lr = left - right;
-	float du = up - down;
+	float du = down - up;
 	tes_CDMnormal = normalize(vec3(lr, 2.0, du));
 }
 
