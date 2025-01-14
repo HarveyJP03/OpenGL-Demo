@@ -315,6 +315,14 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainScene->m_actors.push_back(billboard);
 
+	TextureDescription textDesc;
+	textDesc.width = 512;
+	textDesc.height = 512;
+	textDesc.channels = 4;
+	textDesc.isHDR = false;
+	std::shared_ptr<Texture>emptyTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
+
+
 	//Depth Only Pass
 	FBOLayout prePassLayout =
 	{
@@ -476,6 +484,14 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	m_screenScene.reset(new Scene);
 	//Light Pass Setup
 
+
+	//Compute Pass
+	ShaderDescription textureComputeDesc;
+	textureComputeDesc.type = ShaderType::compute;
+	textureComputeDesc.computeSrcPath = "./assets/shaders/Lab8/compute_textureTest.glsl";
+
+	std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
+	std::shared_ptr<Material> computeTestMaterial = std::make_shared<Material>(computeTestShader);
 
 	////Depth Render Pass
 	//std::shared_ptr<Material> depthRenderMaterial;
@@ -685,6 +701,27 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(screenPass);
 	//Screen Pass Set up
+
+	//Compute Pass
+	ComputePass textureComputePass;
+	textureComputePass.material = computeTestMaterial;
+	textureComputePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
+	/*Memory accesses using shader image load, store, and atomic built - in functions issued after the barrier will reflect data written by shaders
+	prior to the barrier.Additionally, image stores and atomics issued after the barrier will not execute until all memory accesses
+	(e.g., loads, stores, texture fetches, vertex fetches) initiated prior to the barrier complete.*/
+	textureComputePass.barrier = MemoryBarrier::ShaderImageAccess;
+
+	Image image;
+	image.mipLevel = 0;
+	image.layered = false;
+	image.texture = emptyTexture;
+	image.imageUnit = textureComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
+	image.access = TextureAccess::WriteOnly;
+
+	textureComputePass.images.push_back(image);
+	m_previousRenderPassIndex++;
+	m_mainRenderer.addComputePass(textureComputePass);
+	//ComputePass setup
 }
 
 void Lab8::onRender() const
@@ -811,6 +848,16 @@ void Lab8::onImGUIRender()
 		{
 			ImGui::DragFloat("Texture Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
 			ImGui::Checkbox("Geo Normals", &m_geoNormal);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Compute Pass"))
+		{
+			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
+			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
+			ImVec2 imageSize = ImVec2(256, 256);
+			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
+			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 			ImGui::EndTabItem();
 		}
 
