@@ -45,7 +45,6 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> cubeMaterial;
 	cubeMaterial = std::make_shared<Material>(phongShader);
 	cubeMaterial->setValue("u_albedoMap", cubeTexture);
-	cubeMaterial->setValue("u_albedo", m_colour);
 
 	Actor cube;
 	cube.geometry = cubeVAO;
@@ -696,11 +695,14 @@ void Lab8::onUpdate(float timestep)
 {
 	// per frame uniforms
 	auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
-	cubeMat->setValue("u_albedo", m_colour);
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
-	//floorMat->setValue("u_albedo", m_floorColour);
 	floorMat->setValue("u_remapRange", m_remapRange);
+	
+	//Convert from bool to float, as passing in a boolas uniform causes a crash (same with an int too?)
+	if (m_geoNormal) floorMat->setValue("u_geoNormal", 0.0f);
+	else floorMat->setValue("u_geoNormal", 1.0f);
+
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
@@ -766,24 +768,54 @@ void Lab8::onImGUIRender()
 	ImGui::NewFrame();
 	ImGui::Begin("GAMR3521");
 	ImGui::Text("FPS %.3f ms/frame (%.1f FPS)", ms, ImGui::GetIO().Framerate);  // display FPS and ms
-	ImGui::ColorEdit3("Cube Colour", (float*)&m_colour);
-	ImGui::ColorEdit3("Floor Colour", (float*)&m_floorColour);
-	if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
-	if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
-	if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
-	if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
-	if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
-	ImGui::DragFloat("Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
-
-	ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
+	if (ImGui::BeginTabBar("Tabs"))
+	{
+		if (ImGui::BeginTabItem("G Buffer"))
+		{
+			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
+			GLuint positionTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(0)->getID();
+			ImVec2 imageSize = ImVec2(256, 256);
+			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
+			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+			ImGui::Image((void*)(intptr_t)positionTextureID, imageSize, uv0, uv1);
 
-	//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-	GLuint textureID = m_mainRenderer.getDepthPass(0).target->getTarget(0)->getID();
-	ImVec2 imageSize = ImVec2(256, 256);
-	ImVec2 uv0 = ImVec2(0.0f, 1.0f);
-	ImVec2 uv1 = ImVec2(1.0f, 0.0f);
-	ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
+			GLuint normalsTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(1)->getID();
+			ImGui::Image((void*)(intptr_t)normalsTextureID, imageSize, uv0, uv1);
+
+			GLuint albedoTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(2)->getID();
+			ImGui::Image((void*)(intptr_t)albedoTextureID, imageSize, uv0, uv1);
+
+			GLuint specularTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(3)->getID();
+			ImGui::Image((void*)(intptr_t)specularTextureID, imageSize, uv0, uv1);
+
+
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Lighting"))
+		{
+			ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Post Processing"))
+		{
+			if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
+			if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
+			if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
+			if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
+			if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Terrain"))
+		{
+			ImGui::DragFloat("Texture Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
+			ImGui::Checkbox("Geo Normals", &m_geoNormal);
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
 
 	ImGui::End();
 	ImGui::Render();

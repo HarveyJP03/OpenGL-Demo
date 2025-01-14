@@ -8,6 +8,8 @@ in vec2 tes_texCoord[];
 in vec3 tes_CDMnormal[];
 in float tes_heightScale[];
 
+uniform float u_geoNormal;
+
 out vec3 fragmentPos;
 out vec3 vertexNormal;
 out vec2 texCoord;
@@ -29,8 +31,7 @@ void main()
 	{
 		texCoord = tes_texCoord[i];
 		fragmentPos = tes_fragmentPos[i];
-		//vertexNormal = getNormal();
-		vertexNormal = tes_CDMnormal[i];
+		vertexNormal = (u_geoNormal == 0) ?  getNormal() : tes_CDMnormal[i]; //CDM or per surface norms?
 		gl_Position = u_projection * u_view * vec4(fragmentPos, 1.0);
 		
 		EmitVertex();

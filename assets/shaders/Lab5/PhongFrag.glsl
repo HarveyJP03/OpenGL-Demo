@@ -50,7 +50,6 @@ layout (std140, binding = 1) uniform b_camera
 
 
 uniform sampler2D u_albedoMap;
-uniform vec3 u_albedo;
 
 
 
@@ -89,7 +88,7 @@ void main()
 		//result += getSpotLight(i);
 	}
 	      
-	colour = vec4(result * u_albedo, 1.0) * texture(u_albedoMap, texCoord);
+	colour = vec4(result, 1.0) * texture(u_albedoMap, texCoord);
 }
 
 

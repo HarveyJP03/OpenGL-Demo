@@ -13,7 +13,6 @@ in vec3 vertexNormal;
 in vec2 texCoord;
 in float heightScale;
 
-uniform mat4 u_model;
 uniform vec2 u_screenSize;
 uniform float u_remapRange;
 
@@ -26,7 +25,6 @@ float remap(float currValue, float  inMin,float inMax,float outMin, float outMax
 void main()
 {	
 	normal = normalize(vertexNormal) ;
-	vec3 worldNormal = vec3( u_model * vec4(normal, 1.0));
 
 	vec3 colour;
 
@@ -47,11 +45,8 @@ void main()
 	float fragPosyRemap = remap(fragmentPos.y, -u_remapRange, u_remapRange, 0, 1 );
 	float fragPoszRemap = remap(fragmentPos.z, -u_remapRange, u_remapRange, 0, 1 );
 
-	//vec4 xaxis = texture2D(u_terrainTexture, fragmentPos.yz);
 	vec4 xaxis = texture2D(u_terrainTexture, vec2(fragPosyRemap, fragPoszRemap));
-	//vec4 yaxis = texture2D(u_terrainTexture, fragmentPos.xz);
 	vec4 yaxis = texture2D(u_terrainTexture, vec2(fragPosxRemap, fragPoszRemap));
-	//vec4 zaxis = texture2D(u_terrainTexture, fragmentPos.xy);
 	vec4 zaxis = texture2D(u_terrainTexture, vec2(fragPosxRemap, fragPosyRemap));
 
 	vec4 tpTexTerrain = xaxis*blendPercent.x + yaxis*blendPercent.y + zaxis*blendPercent.z;
@@ -65,7 +60,6 @@ void main()
 	col2 = tpTexTerrain.rgb;
 
 	colour = mix(col1, col2, smoothstep(0.0f, mid + mid * 0.5f, fragmentPos.y));
-	//colour = tpTexTerrain.rgb;
 
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 1.0);
