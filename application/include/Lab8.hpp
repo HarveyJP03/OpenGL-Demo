@@ -1,9 +1,9 @@
 #pragma once
 #include <DemonRenderer.hpp>
-class Lab7 : public Layer
+class Lab8 : public Layer
 {
 public:
-	Lab7(GLFWWindowImpl& win);
+	Lab8(GLFWWindowImpl& win);
 private:
 	void onRender() const override;
 	void onUpdate(float timestep) override;

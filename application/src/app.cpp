@@ -7,6 +7,8 @@
 #include "Lab5.hpp"
 #include "Lab6.hpp"
 #include "Lab7.hpp"
+#include "Lab8.hpp"
+
 
 App::App(const WindowProperties& winProps) : Application(winProps)
 {
@@ -17,7 +19,9 @@ App::App(const WindowProperties& winProps) : Application(winProps)
 	//m_layer = std::unique_ptr<Layer>(new Lab4(m_window));
 	//m_layer = std::unique_ptr<Layer>(new Lab5(m_window));
 	//m_layer = std::unique_ptr<Layer>(new Lab6(m_window));
-	m_layer = std::unique_ptr<Layer>(new Lab7(m_window));
+	//m_layer = std::unique_ptr<Layer>(new Lab7(m_window));
+	m_layer = std::unique_ptr<Layer>(new Lab8(m_window));
+
 }
 
 Application* startApplication()

@@ -1,13 +1,12 @@
-#include "Lab7.hpp"
+#include "Lab8.hpp"
 #include "scripts/include/camera.hpp"
 #include "scripts/include/rotation.hpp"
 #include <numeric> // For std::iota
 #include <glm/gtc/matrix_transform.hpp>
 #include "Grid.hpp"
-#include "Lab7.hpp"
 
 
-Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
+Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 {
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
@@ -144,7 +143,7 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 		Model::VertexFlags::uvs |
 		Model::VertexFlags::tangents;
 
-	Model vampireModel("./assets/models/witch/witch.obj", attributeTypes);
+	Model vampireModel("./assets/models/Vampire/vampire.obj", attributeTypes);
 
 	std::shared_ptr<VAO> vampireVAO;
 	vampireVAO = std::make_shared<VAO>(vampireModel.m_meshes[0].indices); //Init with IBO
@@ -155,13 +154,13 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	vampireDepthVAO->addVertexBuffer(vampireModel.m_meshes[0].positions, depthLayout);
 
 	std::shared_ptr<Texture> vampireSpecular;
-	vampireSpecular = std::make_shared<Texture>("./assets/models/witch/textures/specular.png");
+	vampireSpecular = std::make_shared<Texture>("./assets/models/Vampire/textures/specular.png");
 
 	std::shared_ptr<Texture> vampireAlbedo;
-	vampireAlbedo = std::make_shared<Texture>("./assets/models/witch/textures/diffuse.png");
+	vampireAlbedo = std::make_shared<Texture>("./assets/models/Vampire/textures/diffuse.png");
 
 	std::shared_ptr<Texture> vampireNormal;
-	vampireNormal = std::make_shared<Texture>("./assets/models/witch/textures/normal.png");
+	vampireNormal = std::make_shared<Texture>("./assets/models/Vampire/textures/normal.png");
 
 
 	vampireMaterial = std::make_shared<Material>(vampireShader);
@@ -689,11 +688,11 @@ Lab7::Lab7(GLFWWindowImpl& win) : Layer(win)
 	//Screen Pass Set up
 }
 
-void Lab7::onRender() const
+void Lab8::onRender() const
 {
 	m_mainRenderer.render();
 }
-void Lab7::onUpdate(float timestep)
+void Lab8::onUpdate(float timestep)
 {
 	// per frame uniforms
 	auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
@@ -759,7 +758,7 @@ void Lab7::onUpdate(float timestep)
 }
 
 
-void Lab7::onImGUIRender()
+void Lab8::onImGUIRender()
 {
 	float ms = 1000.0f / ImGui::GetIO().Framerate; ;  //milliseconds
 	ImGui_ImplOpenGL3_NewFrame();
@@ -790,7 +789,7 @@ void Lab7::onImGUIRender()
 	ImGui::Render();
 }
 
-void Lab7::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
+void Lab8::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
 	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
 	shaderDesc.type = ShaderType::rasterization;
@@ -803,7 +802,7 @@ void Lab7::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat,
 	mat->setValue("u_inputTexture", inputTex); //simply reads from the texture, which is the FBO we set the main pass to draw to
 }
 
-void Lab7::onKeyPressed(KeyPressedEvent& e)
+void Lab8::onKeyPressed(KeyPressedEvent& e)
 {
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
 	{
