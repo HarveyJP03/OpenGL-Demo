@@ -14,7 +14,6 @@ out float tes_heightScale;
 uniform sampler2D u_heightMap;
 uniform sampler2D u_normalMap;
 
-uniform float u_computeNormal;
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2);
 vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2);
@@ -28,16 +27,7 @@ void main()
 
 	tes_heightScale = 10.0f;
 	tes_fragmentPos.y = height * tes_heightScale;
-
-	float right = textureOffset(u_heightMap, tes_texCoord, ivec2(1,0)).r * (tes_heightScale * 8.0f);
-	float left = textureOffset(u_heightMap, tes_texCoord, ivec2(-1,0)).r * (tes_heightScale * 8.0f);
-	float up = textureOffset(u_heightMap, tes_texCoord, ivec2(0,1)).r * (tes_heightScale * 8.0f);
-	float down = textureOffset(u_heightMap, tes_texCoord, ivec2(0,-1)).r * (tes_heightScale * 8.0f);
-
-	float lr = left - right;
-	float du = down - up;
-	if(u_computeNormal == 1) tes_CDMnormal = normalize(vec3(lr, 2.0, du));
-	if(u_computeNormal == 0) tes_CDMnormal = texture(u_normalMap, tes_texCoord).rgb;
+	tes_CDMnormal = texture(u_normalMap, tes_texCoord).rgb;
 }
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)

@@ -114,5 +114,4 @@ private:
 	
 	float m_remapRange = 20.0f;
 	bool m_geoNormal = false;
-	bool m_computeNormal = false;
 };

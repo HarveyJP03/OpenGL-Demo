@@ -758,7 +758,6 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	CDMComputePass.images.push_back(CDM_mapimage);
 	m_previousRenderPassIndex++;
 	m_initRenderer.addComputePass(CDMComputePass);
-	m_mainRenderer.addComputePass(CDMComputePass);
 	//ComputePass setup
 
 	floor.material->setValue("u_normalMap", emptyCDMTexture);
@@ -781,10 +780,6 @@ void Lab8::onUpdate(float timestep)
 	//Convert from bool to float, as passing in a boolas uniform causes a crash (same with an int too?)
 	if (m_geoNormal) floorMat->setValue("u_geoNormal", 0.0f);
 	else floorMat->setValue("u_geoNormal", 1.0f);
-
-	if (m_computeNormal) floorMat->setValue("u_computeNormal", 0.0f);
-	else floorMat->setValue("u_computeNormal", 1.0f);
-
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
@@ -900,7 +895,6 @@ void Lab8::onImGUIRender()
 		{
 			ImGui::DragFloat("Texture Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
 			ImGui::Checkbox("Geo Normals", &m_geoNormal);
-			ImGui::Checkbox("Compute Normals", &m_computeNormal);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Compute Pass"))
