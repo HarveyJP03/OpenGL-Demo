@@ -50,7 +50,8 @@ private:
 	std::shared_ptr<Material> vampireMaterial;
 	std::shared_ptr<Material> floorMaterial;
 
-	Renderer m_mainRenderer;
+	Renderer m_mainRenderer; //Runs every frame
+	Renderer m_initRenderer; //Runs once at start
 	// Actor positions for ease of use and to avoid additonal magic numbers
 	size_t modelIdx;
 	size_t cameraIdx;

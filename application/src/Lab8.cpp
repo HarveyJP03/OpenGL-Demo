@@ -723,8 +723,10 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 
 	textureComputePass.images.push_back(image);
 	m_previousRenderPassIndex++;
-	m_mainRenderer.addComputePass(textureComputePass);
+	m_initRenderer.addComputePass(textureComputePass);
 	//ComputePass setup
+
+	m_initRenderer.render();
 }
 
 void Lab8::onRender() const
@@ -798,7 +800,7 @@ void Lab8::onUpdate(float timestep)
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
-	m_mainRenderer.getComputePass(0).material->setValue("u_redTint", m_redTint);
+	m_initRenderer.getComputePass(0).material->setValue("u_redTint", m_redTint);
 }
 
 
@@ -858,7 +860,7 @@ void Lab8::onImGUIRender()
 		if (ImGui::BeginTabItem("Compute Pass"))
 		{
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
+			GLuint textureID = m_initRenderer.getComputePass(0).images[0].texture->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
