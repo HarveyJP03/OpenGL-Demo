@@ -12,6 +12,9 @@ out vec3 tes_CDMnormal;
 out float tes_heightScale;
 
 uniform sampler2D u_heightMap;
+uniform sampler2D u_normalMap;
+
+uniform float u_computeNormal;
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2);
 vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2);
@@ -33,7 +36,8 @@ void main()
 
 	float lr = left - right;
 	float du = down - up;
-	tes_CDMnormal = normalize(vec3(lr, 2.0, du));
+	if(u_computeNormal == 1) tes_CDMnormal = normalize(vec3(lr, 2.0, du));
+	if(u_computeNormal == 0) tes_CDMnormal = texture(u_normalMap, tes_texCoord).rgb;
 }
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)

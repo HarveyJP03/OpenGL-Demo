@@ -701,10 +701,8 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
 	std::shared_ptr<Material> computeTestMaterial = std::make_shared<Material>(computeTestShader);
 	std::shared_ptr<Texture> computeImageIn;
-	computeImageIn = std::make_shared<Texture>("./assets/textures/compute/city.png");
+	computeImageIn = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
 	computeTestMaterial->setValue("u_image", computeImageIn);
-	computeTestMaterial->setValue("u_redTint", m_redTint);
-
 
 	ComputePass textureComputePass;
 	textureComputePass.material = computeTestMaterial;
@@ -726,6 +724,45 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	m_initRenderer.addComputePass(textureComputePass);
 	//ComputePass setup
 
+
+	//Compute Pass
+	TextureDescription CDMtextDesc;
+	CDMtextDesc.width = 1024;
+	CDMtextDesc.height = 1024;
+	CDMtextDesc.channels = 4;
+	CDMtextDesc.isHDR = true;
+	std::shared_ptr<Texture>emptyCDMTexture = std::make_shared<Texture>(CDMtextDesc); //empty texture to write to with compute
+
+	ShaderDescription textureCDMComputeDesc;
+	textureCDMComputeDesc.type = ShaderType::compute;
+	textureCDMComputeDesc.computeSrcPath = "./assets/shaders/Lab8/compute_CDMnorms.glsl";
+
+	std::shared_ptr<Shader> computeCDMShader = std::make_shared<Shader>(textureCDMComputeDesc);
+	std::shared_ptr<Material> computeCDMMaterial = std::make_shared<Material>(computeCDMShader);
+	std::shared_ptr<Texture> computeHeightMapIn;
+	computeHeightMapIn = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
+	computeCDMMaterial->setValue("u_image", computeHeightMapIn);
+
+	ComputePass CDMComputePass;
+	CDMComputePass.material = computeCDMMaterial;
+	CDMComputePass.workgroups = { 64, 64, 1 }; //Workgroup = block containing threads
+	CDMComputePass.barrier = MemoryBarrier::ShaderImageAccess;
+
+	Image CDM_mapimage;
+	CDM_mapimage.mipLevel = 0;
+	CDM_mapimage.layered = false;
+	CDM_mapimage.texture = emptyCDMTexture;
+	CDM_mapimage.imageUnit = CDMComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
+	CDM_mapimage.access = TextureAccess::WriteOnly;
+
+	CDMComputePass.images.push_back(CDM_mapimage);
+	m_previousRenderPassIndex++;
+	m_initRenderer.addComputePass(CDMComputePass);
+	m_mainRenderer.addComputePass(CDMComputePass);
+	//ComputePass setup
+
+	floor.material->setValue("u_normalMap", emptyCDMTexture);
+
 	m_initRenderer.render();
 }
 
@@ -744,6 +781,9 @@ void Lab8::onUpdate(float timestep)
 	//Convert from bool to float, as passing in a boolas uniform causes a crash (same with an int too?)
 	if (m_geoNormal) floorMat->setValue("u_geoNormal", 0.0f);
 	else floorMat->setValue("u_geoNormal", 1.0f);
+
+	if (m_computeNormal) floorMat->setValue("u_computeNormal", 0.0f);
+	else floorMat->setValue("u_computeNormal", 1.0f);
 
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
@@ -800,7 +840,6 @@ void Lab8::onUpdate(float timestep)
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
-	m_initRenderer.getComputePass(0).material->setValue("u_redTint", m_redTint);
 }
 
 
@@ -839,6 +878,12 @@ void Lab8::onImGUIRender()
 		if (ImGui::BeginTabItem("Lighting"))
 		{
 			ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
+
+			GLuint textureID = m_mainRenderer.getDepthPass(0).target->getTarget(0)->getID();
+			ImVec2 imageSize = ImVec2(512, 512);
+			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
+			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Post Processing"))
@@ -855,18 +900,25 @@ void Lab8::onImGUIRender()
 		{
 			ImGui::DragFloat("Texture Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
 			ImGui::Checkbox("Geo Normals", &m_geoNormal);
+			ImGui::Checkbox("Compute Normals", &m_computeNormal);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Compute Pass"))
 		{
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-			GLuint textureID = m_initRenderer.getComputePass(0).images[0].texture->getID();
+			GLuint textureID = m_initRenderer.getComputePass(1).images[0].texture->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 
-			ImGui::DragFloat("Red tint", (float*)&m_redTint, 0.01f, 0.f, 1.0f);
+			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
+		    textureID = m_initRenderer.getComputePass(0).images[0].texture->getID();
+			imageSize = ImVec2(512, 512);
+			uv0 = ImVec2(0.0f, 1.0f);
+			uv1 = ImVec2(1.0f, 0.0f);
+			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
+
 
 			ImGui::EndTabItem();
 		}
