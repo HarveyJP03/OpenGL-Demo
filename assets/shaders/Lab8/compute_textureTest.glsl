@@ -5,6 +5,8 @@ layout(binding = 0, rgba8) uniform image2D outputImg;
 
 uniform sampler2D u_image;
 
+uniform float u_redTint;
+
 void main()
 {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy); //ID of the work item(thread) in relation to the whole dispatch, not just the work group
@@ -27,7 +29,7 @@ void main()
 		}
 	}
 
-	vec4 blurredColour = colourSum / float(sampleCount);
+	vec4 blurredColour = (colourSum / float(sampleCount)) * vec4(u_redTint, 0.5, 0.5, 1.0);
 
 	imageStore(outputImg, pixel_coords, blurredColour); //write color to image at pixel coords
 }

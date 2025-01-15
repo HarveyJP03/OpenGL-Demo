@@ -703,6 +703,7 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Texture> computeImageIn;
 	computeImageIn = std::make_shared<Texture>("./assets/textures/compute/city.png");
 	computeTestMaterial->setValue("u_image", computeImageIn);
+	computeTestMaterial->setValue("u_redTint", m_redTint);
 
 
 	ComputePass textureComputePass;
@@ -768,7 +769,7 @@ void Lab8::onUpdate(float timestep)
 	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
 
 
-	//fUpdate scripts
+	//Update scripts
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
 	{
 		it->onUpdate(timestep);
@@ -796,6 +797,8 @@ void Lab8::onUpdate(float timestep)
 
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
+
+	m_mainRenderer.getComputePass(0).material->setValue("u_redTint", m_redTint);
 }
 
 
@@ -860,6 +863,9 @@ void Lab8::onImGUIRender()
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
+
+			ImGui::DragFloat("Red tint", (float*)&m_redTint, 0.01f, 0.f, 1.0f);
+
 			ImGui::EndTabItem();
 		}
 

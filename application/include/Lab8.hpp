@@ -113,4 +113,5 @@ private:
 	
 	float m_remapRange = 20.0f;
 	bool m_geoNormal = false;
+	float m_redTint = 1.0f;
 };
