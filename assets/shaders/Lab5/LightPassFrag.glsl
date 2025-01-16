@@ -76,6 +76,7 @@ void main()
 	normal = texture(u_normalTexture, texCoord).rgb;
 	albedoColour = texture(u_albedoTexture, texCoord).rgb;
 	specularStrength = texture(u_specularTexture, texCoord).r;
+	//specularStrength = texture(u_albedoTexture, texCoord).a; //No matter what I set or where I set it, this always ends up as 1?
 	
 	vec3 result = vec3(0.0, 0.0, 0.0); 
     viewDir = normalize(u_viewPos - fragmentPos);

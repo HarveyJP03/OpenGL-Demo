@@ -1,4 +1,4 @@
-#include "Lab8.hpp"
+#include "Lab9.hpp"
 #include "scripts/include/camera.hpp"
 #include "scripts/include/rotation.hpp"
 #include <numeric> // For std::iota
@@ -6,7 +6,7 @@
 #include "Grid.hpp"
 
 
-Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
+Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 {
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
@@ -89,7 +89,7 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	floorMaterial = std::make_shared<Material>(floorShader);
 
 	std::shared_ptr<Texture> floorTexture;
-	floorTexture = std::make_shared<Texture>("./assets/textures/HeightMaps/mountain-rock.png",GL_REPEAT);
+	floorTexture = std::make_shared<Texture>("./assets/textures/HeightMaps/mountain-rock.png", GL_REPEAT);
 	floorMaterial->setValue("u_terrainTexture", floorTexture);
 
 	std::shared_ptr<Texture> floorGrassTexture;
@@ -703,43 +703,43 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	m_mainRenderer.addRenderPass(screenPass);
 	//Screen Pass Set up
 
-	////Compute Pass
-	//TextureDescription textDesc;
-	//textDesc.width = 512;
-	//textDesc.height = 512;
-	//textDesc.channels = 4;
-	//textDesc.isHDR = false;
-	//std::shared_ptr<Texture>emptyTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
+	//Compute Pass
+	TextureDescription textDesc;
+	textDesc.width = 1024;
+	textDesc.height = 1024;
+	textDesc.channels = 4;
+	textDesc.isHDR = false;
+	std::shared_ptr<Texture>emptyTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
 
-	//ShaderDescription textureComputeDesc;
-	//textureComputeDesc.type = ShaderType::compute;
-	//textureComputeDesc.computeSrcPath = "./assets/shaders/Lab8/compute_textureTest.glsl";
+	ShaderDescription textureComputeDesc;
+	textureComputeDesc.type = ShaderType::compute;
+	textureComputeDesc.computeSrcPath = "./assets/shaders/Lab9/compute_noise.glsl";
 
-	//std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
-	//std::shared_ptr<Material> computeTestMaterial = std::make_shared<Material>(computeTestShader);
-	//std::shared_ptr<Texture> computeImageIn;
-	//computeImageIn = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png");
-	//computeTestMaterial->setValue("u_image", computeImageIn);
+	std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
+	std::shared_ptr<Material> computeTestMaterial = std::make_shared<Material>(computeTestShader);
+	std::shared_ptr<Texture> computeImageIn;
+	computeImageIn = std::make_shared<Texture>("./assets/textures/compute/city.png");
+	computeTestMaterial->setValue("u_image", computeImageIn);
 
-	//ComputePass textureComputePass;
-	//textureComputePass.material = computeTestMaterial;
-	//textureComputePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
-	///*Memory accesses using shader image load, store, and atomic built - in functions issued after the barrier will reflect data written by shaders
-	//prior to the barrier.Additionally, image stores and atomics issued after the barrier will not execute until all memory accesses
-	//(e.g., loads, stores, texture fetches, vertex fetches) initiated prior to the barrier complete.*/
-	//textureComputePass.barrier = MemoryBarrier::ShaderImageAccess;
+	ComputePass textureComputePass;
+	textureComputePass.material = computeTestMaterial;
+	textureComputePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
+	/*Memory accesses using shader image load, store, and atomic built - in functions issued after the barrier will reflect data written by shaders
+	prior to the barrier.Additionally, image stores and atomics issued after the barrier will not execute until all memory accesses
+	(e.g., loads, stores, texture fetches, vertex fetches) initiated prior to the barrier complete.*/
+	textureComputePass.barrier = MemoryBarrier::ShaderImageAccess;
 
-	//Image image;
-	//image.mipLevel = 0;
-	//image.layered = false;
-	//image.texture = emptyTexture;
-	//image.imageUnit = textureComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
-	//image.access = TextureAccess::WriteOnly;
+	Image image;
+	image.mipLevel = 0;
+	image.layered = false;
+	image.texture = emptyTexture;
+	image.imageUnit = textureComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
+	image.access = TextureAccess::WriteOnly;
 
-	//textureComputePass.images.push_back(image);
-	//m_previousRenderPassIndex++;
-	//m_initRenderer.addComputePass(textureComputePass);
-	////ComputePass setup
+	textureComputePass.images.push_back(image);
+	m_previousRenderPassIndex++;
+	m_initRenderer.addComputePass(textureComputePass);
+	//ComputePass setup
 
 
 	//Compute Pass
@@ -781,18 +781,18 @@ Lab8::Lab8(GLFWWindowImpl& win) : Layer(win)
 	m_initRenderer.render();
 }
 
-void Lab8::onRender() const
+void Lab9::onRender() const
 {
 	m_mainRenderer.render();
 }
-void Lab8::onUpdate(float timestep)
+void Lab9::onUpdate(float timestep)
 {
 	// per frame uniforms
 	auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_remapRange", m_remapRange);
-	
+
 	//Convert from bool to float, as passing in a boolas uniform causes a crash (same with an int too?)
 	if (m_geoNormal) floorMat->setValue("u_geoNormal", 0.0f);
 	else floorMat->setValue("u_geoNormal", 1.0f);
@@ -856,7 +856,7 @@ void Lab8::onUpdate(float timestep)
 }
 
 
-void Lab8::onImGUIRender()
+void Lab9::onImGUIRender()
 {
 	float ms = 1000.0f / ImGui::GetIO().Framerate; ;  //milliseconds
 	ImGui_ImplOpenGL3_NewFrame();
@@ -936,7 +936,7 @@ void Lab8::onImGUIRender()
 	ImGui::Render();
 }
 
-void Lab8::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
+void Lab9::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
 	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
 	shaderDesc.type = ShaderType::rasterization;
@@ -949,7 +949,7 @@ void Lab8::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat,
 	mat->setValue("u_inputTexture", inputTex); //simply reads from the texture, which is the FBO we set the main pass to draw to
 }
 
-void Lab8::onKeyPressed(KeyPressedEvent& e)
+void Lab9::onKeyPressed(KeyPressedEvent& e)
 {
 	for (auto it = m_mainScene->m_actors.begin(); it != m_mainScene->m_actors.end(); ++it)
 	{

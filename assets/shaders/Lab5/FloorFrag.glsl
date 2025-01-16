@@ -63,7 +63,7 @@ void main()
 
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 1.0);
-	gDiffSpec = vec4( colour, 1.0);
+	gDiffSpec = vec4( colour, specularStrength);
 	gSpec = vec4(specularStrength);
 }
 

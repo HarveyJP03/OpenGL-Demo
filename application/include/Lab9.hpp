@@ -1,9 +1,9 @@
 #pragma once
 #include <DemonRenderer.hpp>
-class Lab8 : public Layer
+class Lab9 : public Layer
 {
 public:
-	Lab8(GLFWWindowImpl& win);
+	Lab9(GLFWWindowImpl& win);
 private:
 	void onRender() const override;
 	void onUpdate(float timestep) override;
@@ -112,7 +112,7 @@ private:
 	bool m_wireFrame = false;
 	float m_focusDistance = 0.25f;
 	glm::vec3 m_lightDirection{ glm::vec3(-0.2, -1.0, -0.5) };
-	
+
 	float m_remapRange = 20.0f;
 	bool m_geoNormal = false;
 	float m_tiltIntensity = 0.125f;

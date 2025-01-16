@@ -45,5 +45,5 @@ private:
 	uint32_t m_channels{ 0 }; //!< Number of channels
 	bool m_isHDR{ false }; //!< Is the texture high dynamic range
 private:
-	void init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR, float param = GL_REPEAT); //!< Initialise the texture
+	void init(uint32_t width, uint32_t height, uint32_t channels, unsigned char* data, bool isHDR, float param = GL_CLAMP_TO_EDGE); //!< Initialise the texture
 };
