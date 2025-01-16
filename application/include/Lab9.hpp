@@ -18,7 +18,8 @@ private:
 
 	std::shared_ptr<Material> lightPassMaterial;
 	std::shared_ptr<Material> tiltShiftMaterial;
-	float m_strength = 0.5f;
+
+	std::shared_ptr<Material> noiseMaterial;
 
 	int m_numPointLights = 30;
 
@@ -116,4 +117,9 @@ private:
 	float m_remapRange = 20.0f;
 	bool m_geoNormal = false;
 	float m_tiltIntensity = 0.125f;
+
+	float m_frequency = 5.0f;
+	float m_amplitude = 1.5f;
+	float m_lacunarity = 2.0f;
+	float m_persistence = 0.5f;
 };

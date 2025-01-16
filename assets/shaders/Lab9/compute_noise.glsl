@@ -1,24 +1,29 @@
 #version 460 core
 
-layout(local_size_x = 16, local_size_y = 16) in; //512x512 image, 32x32 work groups, so each work group should be 16x16. 8 Warps per work group
+layout(local_size_x = 32, local_size_y = 32) in; //512x512 image, 32x32 work groups, so each work group should be 16x16. 8 Warps per work group
 layout(binding = 0, rgba8) uniform image2D outputImg;
 
-uniform sampler2D u_image;
+uniform float u_frequency;
+uniform float u_amplitude;
+uniform float u_lacunarity;
+uniform float u_persistence;
+
 
 float noise(in vec2 p);
 vec2 hash2(vec2 p);
 float remap(float currValue, float  inMin,float inMax,float outMin, float outMax);
+float FBM(vec2 position, int octaves);
 
 void main()
 {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy); //ID of the work item(thread) in relation to the whole dispatch, not just the work group
 	vec2 uv = vec2(pixel_coords) / vec2(1024);
-	vec4 pixelCol = texture2D(u_image, uv);
+	vec4 pixelCol = vec4(0.0f);
 
-	float noiseValue = noise(uv * 10.0f) * 1.5f;
-	noiseValue = remap(noiseValue, -1, 1, 0, 1);
+	float FBMnoise = FBM(uv, 5);
+	FBMnoise = remap(FBMnoise, -1, 1, 0, 1);
 
-	imageStore(outputImg, pixel_coords, vec4(vec3(noiseValue), 1.0)); //write color to image at pixel coords
+	imageStore(outputImg, pixel_coords, vec4(vec3(FBMnoise), 1.0)); //write color to image at pixel coords
 }
 
 float noise(in vec2 p)
@@ -46,4 +51,23 @@ float remap(float currValue, float  inMin,float inMax,float outMin, float outMax
 {
 	float t = (currValue - inMin) / (inMax - inMin);
 	return mix(outMin, outMax, t);
+}
+
+float FBM(vec2 position, int octaves)
+{
+	float total = 0.0f;
+	float totalAmplitude = 0.0f; //These get added to
+
+	float frequency = u_frequency;
+	float amplitude = u_amplitude;
+
+	for(int i = 0; i < octaves; i++)
+	{
+		total += noise(position * frequency) * amplitude;
+		frequency *= u_lacunarity;
+		amplitude *= u_persistence;
+		totalAmplitude += amplitude;
+	}
+
+	return u_amplitude * total / totalAmplitude;
 }

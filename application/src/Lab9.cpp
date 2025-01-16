@@ -709,36 +709,31 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	textDesc.height = 1024;
 	textDesc.channels = 4;
 	textDesc.isHDR = false;
-	std::shared_ptr<Texture>emptyTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
+	std::shared_ptr<Texture>heightMapTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
 
 	ShaderDescription textureComputeDesc;
 	textureComputeDesc.type = ShaderType::compute;
 	textureComputeDesc.computeSrcPath = "./assets/shaders/Lab9/compute_noise.glsl";
 
 	std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
-	std::shared_ptr<Material> computeTestMaterial = std::make_shared<Material>(computeTestShader);
-	std::shared_ptr<Texture> computeImageIn;
-	computeImageIn = std::make_shared<Texture>("./assets/textures/compute/city.png");
-	computeTestMaterial->setValue("u_image", computeImageIn);
+	noiseMaterial = std::make_shared<Material>(computeTestShader);
 
 	ComputePass textureComputePass;
-	textureComputePass.material = computeTestMaterial;
+	textureComputePass.material = noiseMaterial;
 	textureComputePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
-	/*Memory accesses using shader image load, store, and atomic built - in functions issued after the barrier will reflect data written by shaders
-	prior to the barrier.Additionally, image stores and atomics issued after the barrier will not execute until all memory accesses
-	(e.g., loads, stores, texture fetches, vertex fetches) initiated prior to the barrier complete.*/
 	textureComputePass.barrier = MemoryBarrier::ShaderImageAccess;
 
 	Image image;
 	image.mipLevel = 0;
 	image.layered = false;
-	image.texture = emptyTexture;
+	image.texture = heightMapTexture;
 	image.imageUnit = textureComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
 	image.access = TextureAccess::WriteOnly;
 
 	textureComputePass.images.push_back(image);
 	m_previousRenderPassIndex++;
 	m_initRenderer.addComputePass(textureComputePass);
+	m_mainRenderer.addComputePass(textureComputePass);
 	//ComputePass setup
 
 
@@ -758,7 +753,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> computeCDMMaterial = std::make_shared<Material>(computeCDMShader);
 	std::shared_ptr<Texture> computeHeightMapIn;
 	computeHeightMapIn = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png", GL_CLAMP_TO_EDGE);
-	computeCDMMaterial->setValue("u_heightMap", computeHeightMapIn);
+	computeCDMMaterial->setValue("u_heightMap", heightMapTexture);
 
 	ComputePass CDMComputePass;
 	CDMComputePass.material = computeCDMMaterial;
@@ -775,7 +770,10 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	CDMComputePass.images.push_back(CDM_mapimage);
 	m_previousRenderPassIndex++;
 	m_initRenderer.addComputePass(CDMComputePass);
+	m_mainRenderer.addComputePass(CDMComputePass);
 	//ComputePass setup
+
+
 	floor.material->setValue("u_normalHeightMap", CDMterrainNormalsTexture);
 
 	m_initRenderer.render();
@@ -853,6 +851,11 @@ void Lab9::onUpdate(float timestep)
 
 	tiltShiftMaterial->setValue("u_intensity", m_tiltIntensity);
 
+	noiseMaterial->setValue("u_frequency", m_frequency);
+	noiseMaterial->setValue("u_amplitude", m_amplitude);
+	noiseMaterial->setValue("u_lacunarity", m_lacunarity);
+	noiseMaterial->setValue("u_persistence", m_persistence);
+
 }
 
 
@@ -916,13 +919,25 @@ void Lab9::onImGUIRender()
 			ImGui::Checkbox("Geo Normals", &m_geoNormal);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Compute Pass"))
+		if (ImGui::BeginTabItem("Noise"))
 		{
+			ImGui::DragFloat("Frequency", (float*)&m_frequency, 0.5f, 0.0f, 200.f);
+			ImGui::DragFloat("Amplitude", (float*)&m_amplitude, 0.1f, 0.0f, 200.f);
+			ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
+			ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
+			
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
-			GLuint textureID = m_initRenderer.getComputePass(0).images[0].texture->getID();
+			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
+#
+			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
+			textureID = m_mainRenderer.getComputePass(2).images[0].texture->getID();
+			imageSize = ImVec2(512, 512);
+			uv0 = ImVec2(0.0f, 1.0f);
+	        uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 
 
