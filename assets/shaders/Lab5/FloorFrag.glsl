@@ -32,9 +32,6 @@ void main()
 	vec3 col1 = vec3(0.2, 0.6, 0.1);
 	vec3 col2 = vec3(0.6, 0.2, 0.1);
 
-	//col1 = texture(u_terrainGrassTexture, texCoord).rgb;
-	//col2 = texture(u_terrainTexture, texCoord).rgb;
-
 	//tri plannar
 	vec3 blendPercent = abs(normalize((vertexNormal)));
 	blendPercent = blendPercent / (blendPercent.x + blendPercent.y + blendPercent.z);
@@ -56,10 +53,11 @@ void main()
 	vec4 zaxisG = texture2D(u_terrainGrassTexture, vec2(fragPosxRemap, fragPosyRemap));
 	vec4 tpGrassTerrain = xaxisG*blendPercent.x + yaxisG*blendPercent.y + zaxisG*blendPercent.z;
 
-	col1 = tpGrassTerrain.rgb;
-	col2 = tpTexTerrain.rgb;
+	//col1 = tpGrassTerrain.rgb;
+	//col2 = tpTexTerrain.rgb;
 
-	colour = mix(col1, col2, smoothstep(0.0f, mid + mid * 0.5f, fragmentPos.y));
+	colour = mix(col1, col2, smoothstep(0.0f, mid + mid * 0.75f, fragmentPos.y));
+	//colour = vec3(0.6, 0.2, 0.2);
 
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 1.0);

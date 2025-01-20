@@ -755,6 +755,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	computeHeightMapIn = std::make_shared<Texture>("./assets/textures/HeightMaps/map2.png", GL_CLAMP_TO_EDGE);
 	computeCDMMaterial->setValue("u_heightMap", heightMapTexture);
 
+
 	ComputePass CDMComputePass;
 	CDMComputePass.material = computeCDMMaterial;
 	CDMComputePass.workgroups = { 64, 64, 1 }; //Workgroup = block containing threads
@@ -772,7 +773,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_initRenderer.addComputePass(CDMComputePass);
 	m_mainRenderer.addComputePass(CDMComputePass);
 	//ComputePass setup
-
 
 	floor.material->setValue("u_normalHeightMap", CDMterrainNormalsTexture);
 
@@ -856,6 +856,8 @@ void Lab9::onUpdate(float timestep)
 	noiseMaterial->setValue("u_lacunarity", m_lacunarity);
 	noiseMaterial->setValue("u_persistence", m_persistence);
 
+	noiseMaterial->setValue("u_noiseType", (float)m_noiseType);
+
 }
 
 
@@ -922,9 +924,21 @@ void Lab9::onImGUIRender()
 		if (ImGui::BeginTabItem("Noise"))
 		{
 			ImGui::DragFloat("Frequency", (float*)&m_frequency, 0.5f, 0.0f, 200.f);
-			ImGui::DragFloat("Amplitude", (float*)&m_amplitude, 0.1f, 0.0f, 200.f);
+			ImGui::DragFloat("Amplitude", (float*)&m_amplitude, 0.01f, 0.0f, 200.f);
 			ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
 			ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
+
+			ImGui::RadioButton("Gradient", &m_noiseType, 0);
+			ImGui::SameLine();
+			ImGui::RadioButton("FBM", &m_noiseType, 1);
+			ImGui::SameLine();
+			ImGui::RadioButton("RigidFBM", &m_noiseType, 2);
+			ImGui::SameLine();
+			ImGui::RadioButton("TurbulentFBM", &m_noiseType, 3);
+			ImGui::SameLine();
+			ImGui::RadioButton("Combined", &m_noiseType, 4);
+			ImGui::SameLine();
+			ImGui::RadioButton("Worley", &m_noiseType, 5);
 			
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();

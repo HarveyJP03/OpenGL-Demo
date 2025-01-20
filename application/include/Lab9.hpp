@@ -122,4 +122,6 @@ private:
 	float m_amplitude = 1.5f;
 	float m_lacunarity = 2.0f;
 	float m_persistence = 0.5f;
+
+	int m_noiseType = 0;
 };
