@@ -9,6 +9,9 @@ uniform float u_lacunarity;
 uniform float u_persistence;
 
 uniform float u_noiseType;
+uniform float u_time;
+uniform float u_invertWorley;
+uniform float u_animateWorley;
 
 float noise(in vec2 p);
 vec2 hash2(vec2 p);
@@ -154,42 +157,53 @@ float turbulentFBM(vec2 position, float octaves)
 
 float worley(vec2 position)
 {
-	const float gridSize = 4; //Need this to be a float, otherwise cellSize comes out as an integer
-	const int i_gridSize = 4;  //Need an int version of this for the array, but not allowed to use casts in GLSL...
+	const float gridSize = 16; //Need this to be a float, otherwise cellSize comes out as an integer
+	const int i_gridSize = 16;  //Need an int version of this for the array, but not allowed to use casts in GLSL...
 	const float cellSize = 1 / gridSize;
     vec2 points[i_gridSize][i_gridSize];
 
-	for(int x = 0; x < gridSize; x++)
+	float cellX = floor(position.x / cellSize);
+	float cellY = floor(position.y / cellSize);
+	vec2 pointCell = vec2(cellX, cellY);
+	
+	float minDist = 1.0f;
+	for(float x = cellX - 1; x <= cellX + 1; x++)
 	{
-		for(int y = 0; y < gridSize; y++)
+		if(x >= gridSize) continue;
+		if(x < 0) continue;
+		for(float y = cellY - 1; y <= cellY + 1; y++)
 		{
+			if(y >= gridSize) continue;
+			if(y < 0) continue;
+				
 			float xminValue = x * cellSize;
 			float yminValue = y * cellSize;
-
 			float xmaxValue = xminValue + cellSize;
 			float ymaxValue = yminValue + cellSize;
-
 			float xValue = (xminValue + xmaxValue) * 0.5f;
 			float yValue = (yminValue + ymaxValue) * 0.5f;
-
 			vec2 point = vec2(xValue, yValue);
 
+			float randomValuex = fract(sin(dot(vec2(x,y), vec2(27.34409,78.233))) * 43758.5453123);
+			float randomValuey = fract(sin(dot(vec2(y,x), vec2(27.34409, 78.233))) * 43758.5453123);
 
-			points[x][y] = point;
+			float timeVal = (sin(u_time) * cellSize);
+			vec2 randomPoint = vec2(randomValuex, randomValuey);
+
+			if(u_animateWorley == 1.0f)
+			{
+				randomPoint = 0.5 + 0.5 * sin( u_time + 6.2831 * randomPoint );
+			}
+
+			randomValuex = remap(randomPoint.x, 0, 1, xminValue, xmaxValue);
+			randomValuey = remap(randomPoint.y, 0, 1, yminValue, ymaxValue);
+
+			randomPoint = vec2(randomValuex, randomValuey);
+
+			minDist = min(minDist, distance(position, randomPoint));
+
 		}
 	}
-
-	float minDist = 1.0f;
-
-	for(int x = 0; x < gridSize; x++)
-	{
-		for(int y = 0; y < gridSize; y++)
-		{
-			minDist = min(minDist, distance(position, points[x][y]));
-		}
-	}
-
-	return minDist * u_amplitude;
-
-
+	if(u_invertWorley == 1.0f) 	return 1.0 - minDist * u_amplitude;
+	else return minDist * u_amplitude;
 }

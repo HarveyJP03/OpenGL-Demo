@@ -124,4 +124,6 @@ private:
 	float m_persistence = 0.5f;
 
 	int m_noiseType = 0;
+	bool m_invertWorley = false;
+	bool m_animateWorley = false;
 };

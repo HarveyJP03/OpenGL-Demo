@@ -5,6 +5,8 @@ layout(binding = 0, rgba8) uniform image2D outputImg;
 
 uniform sampler2D u_image;
 
+
+
 void main()
 {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy); //ID of the work item(thread) in relation to the whole dispatch, not just the work group

@@ -734,6 +734,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_previousRenderPassIndex++;
 	m_initRenderer.addComputePass(textureComputePass);
 	m_mainRenderer.addComputePass(textureComputePass);
+
 	//ComputePass setup
 
 
@@ -856,8 +857,15 @@ void Lab9::onUpdate(float timestep)
 	noiseMaterial->setValue("u_lacunarity", m_lacunarity);
 	noiseMaterial->setValue("u_persistence", m_persistence);
 
-	noiseMaterial->setValue("u_noiseType", (float)m_noiseType);
 
+	noiseMaterial->setValue("u_noiseType", (float)m_noiseType);
+	noiseMaterial->setValue("u_time", (float)glfwGetTime());
+
+	if (m_invertWorley) noiseMaterial->setValue("u_invertWorley", 1.0f);
+	else noiseMaterial->setValue("u_invertWorley", 0.0f);
+
+	if (m_animateWorley) noiseMaterial->setValue("u_animateWorley", 1.0f);
+	else noiseMaterial->setValue("u_animateWorley", 0.0f);
 }
 
 
@@ -923,10 +931,10 @@ void Lab9::onImGUIRender()
 		}
 		if (ImGui::BeginTabItem("Noise"))
 		{
-			ImGui::DragFloat("Frequency", (float*)&m_frequency, 0.5f, 0.0f, 200.f);
+			if (m_noiseType != 5)ImGui::DragFloat("Frequency", (float*)&m_frequency, 0.5f, 0.0f, 200.f);
 			ImGui::DragFloat("Amplitude", (float*)&m_amplitude, 0.01f, 0.0f, 200.f);
-			ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
-			ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
+			if (m_noiseType != 5)ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
+			if (m_noiseType != 5) ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
 
 			ImGui::RadioButton("Gradient", &m_noiseType, 0);
 			ImGui::SameLine();
@@ -939,6 +947,9 @@ void Lab9::onImGUIRender()
 			ImGui::RadioButton("Combined", &m_noiseType, 4);
 			ImGui::SameLine();
 			ImGui::RadioButton("Worley", &m_noiseType, 5);
+
+			if(m_noiseType == 5) ImGui::Checkbox("Invert", &m_invertWorley);
+			if (m_noiseType == 5) ImGui::Checkbox("Animate", &m_animateWorley);
 			
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
