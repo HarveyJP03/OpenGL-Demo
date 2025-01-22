@@ -16,6 +16,8 @@ private:
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 	std::shared_ptr<Scene> skyBoxOnlyScene;
 
+	std::shared_ptr<Scene> m_forwardRenderScene;
+
 	std::shared_ptr<Material> lightPassMaterial;
 	std::shared_ptr<Material> tiltShiftMaterial;
 
@@ -54,6 +56,8 @@ private:
 
 	Renderer m_mainRenderer; //Runs every frame
 	Renderer m_initRenderer; //Runs once at start
+	Renderer m_forwardRenderer;
+
 	// Actor positions for ease of use and to avoid additonal magic numbers
 	size_t modelIdx;
 	size_t cameraIdx;

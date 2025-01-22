@@ -10,6 +10,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 {
 
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
+	m_forwardRenderScene.reset(new Scene);
 
 	VBOLayout depthLayout = { {GL_FLOAT, 3} };
 	//Set Up Depth Only Pass Material
@@ -52,8 +53,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	cube.translation = glm::vec3(0.f, 5.f, -9.f);
 	cube.scale = glm::vec3(0.25f);
 	cube.recalc();
-	modelIdx = m_mainScene->m_actors.size();
-	m_mainScene->m_actors.push_back(cube);
+	//modelIdx = m_mainScene->m_actors.size();
+	//m_mainScene->m_actors.push_back(cube);
 
 
 	//** Creating Floor
@@ -195,6 +196,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	dl.direction = glm::normalize(m_lightDirection);
 	dl.colour = glm::vec3(0.25f);
 	m_mainScene->m_directionalLights.push_back(dl);
+	m_forwardRenderScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
 	m_numPointLights = 60;
@@ -263,8 +265,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	camera.translation = glm::vec3(0.0f, 10.0f, 0.0f);
 	m_mainScene->m_actors.push_back(camera);
 
+	
 	std::vector<float> billboardPositions; //GEO shader for billboards will create all billboards in scene, pass it all positions and for each position it will create a billboard
-
 	std::shared_ptr<VAO> billboardVAO;
 	std::vector<uint32_t> billboardIndices = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	for (int i = 0; i < 10; i++)
@@ -308,8 +310,16 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboardDepthPassMaterial->setValue("u_billboardImage", billboardTexture);
 	billboard.depthMaterial = billboardDepthPassMaterial;
 	billboard.depthGeometry = billboardVAO;
-
 	m_mainScene->m_actors.push_back(billboard);
+
+
+	//particle system 
+	struct Particle
+	{
+		glm::vec4 position; //z = particle age
+		glm::vec4 velocity;
+	};
+
 
 	//Depth Only Pass
 	FBOLayout prePassLayout =
@@ -382,7 +392,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Gpass setup
 
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(GPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f) * 2.0f, 2.5f);
-	m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(GPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
+	//m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(GPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
@@ -700,6 +710,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	screenPass.UBOmanager.setCachedValue("b_camera2D", "u_view", screenPass.camera.view);
 	screenPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", screenPass.camera.projection);
 
+	m_previousRenderPassIndex++;
 	m_mainRenderer.addRenderPass(screenPass);
 	//Screen Pass Set up
 
@@ -777,17 +788,51 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	floor.material->setValue("u_normalHeightMap", CDMterrainNormalsTexture);
 
+	
+
+	//Pass for forward renderingw
+	m_forwardRenderScene->m_actors.push_back(cube);
+
+	RenderPass forwardRenderPass;
+	forwardRenderPass.scene = m_forwardRenderScene;
+	forwardRenderPass.parseScene();
+	forwardRenderPass.target = std::make_shared<FBO>();
+	forwardRenderPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
+	forwardRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	forwardRenderPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
+	forwardRenderPass.UBOmanager.setCachedValue("b_camera", "u_view", forwardRenderPass.camera.view);
+	forwardRenderPass.UBOmanager.setCachedValue("b_camera", "u_projection", forwardRenderPass.camera.projection);
+	forwardRenderPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
+	
+	forwardRenderPass.UBOmanager.setCachedValue("b_lights", "dLight.colour", m_mainScene->m_directionalLights.at(0).colour);
+	forwardRenderPass.UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+
+	for (int i = 0; i < m_numPointLights; i++)
+	{
+		bool passed = forwardRenderPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		passed = forwardRenderPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		passed = forwardRenderPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+	}
+
+	//
+	m_forwardRenderer.addRenderPass(forwardRenderPass);
+	//m_previousRenderPassIndex++;
+	m_forwardRenderScene->m_actors.at(0).attachScript<RotationScript>(forwardRenderPass.scene->m_actors.at(0), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
+	////forward render pass setup
+
 	m_initRenderer.render();
 }
 
 void Lab9::onRender() const
 {
 	m_mainRenderer.render();
+	m_forwardRenderer.render();
 }
 void Lab9::onUpdate(float timestep)
 {
 	// per frame uniforms
-	auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
+	//auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
+	auto cubeMat = m_forwardRenderScene->m_actors.at(0).material;
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_remapRange", m_remapRange);
@@ -798,15 +843,23 @@ void Lab9::onUpdate(float timestep)
 
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
+	
+	m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
 	for (int i = 0; i < m_numPointLights; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
-		m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
+		
+		//m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
+		m_forwardRenderScene->m_actors.at(0).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
 
-		m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
-		m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
-		m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
+
+		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
+		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
 	}
 
 	m_mainRenderer.getRenderPass(0).drawInWireFrame = m_wireFrame;
@@ -827,6 +880,12 @@ void Lab9::onUpdate(float timestep)
 		it->onUpdate(timestep);
 	}
 
+	//Update scripts
+	for (auto it = m_forwardRenderScene->m_actors.begin(); it != m_forwardRenderScene->m_actors.end(); ++it)
+	{
+		it->onUpdate(timestep);
+	}
+
 	// Update camera  and its position in UBO
 	auto& camera = m_mainScene->m_actors.at(cameraIdx);
 	auto& pass = m_mainRenderer.getRenderPass(0);
@@ -839,6 +898,12 @@ void Lab9::onUpdate(float timestep)
 	skyBoxpass.camera.updateView(camera.transform);
 	skyBoxpass.UBOmanager.setCachedValue("b_camera", "u_view", skyBoxpass.camera.view);
 	skyBoxpass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
+
+	// Update camera  and its position in UBO
+	auto& forwardPass = m_forwardRenderer.getRenderPass(0);
+	forwardPass.camera.updateView(camera.transform);
+	forwardPass.UBOmanager.setCachedValue("b_camera", "u_view", forwardPass.camera.view);
+	forwardPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", camera.translation);
 
 	lightPassMaterial->setValue("u_viewPos", camera.translation);
 
