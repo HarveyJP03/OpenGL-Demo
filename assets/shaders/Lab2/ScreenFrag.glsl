@@ -11,8 +11,8 @@ vec3 aces(vec3 x);
 void main()
 {
 	vec3 texColour = texture(u_inputTexture, texCoord).rgb;
-	texColour = aces(texColour); //tonemap
-	texColour = pow(texColour, vec3(1.0 / 2.2)); //gamma correct
+	//texColour = aces(texColour); //tonemap
+	//texColour = pow(texColour, vec3(1.0 / 2.2)); //gamma correct  //TONEMAP AND GAMMA CORRECTION IN THE DEFFERED RENDERING + FORWARD RENDERING PASS (lab10/ FMmixFrag)
 	ppColour = vec4(texColour, 1.0f);
 }
 

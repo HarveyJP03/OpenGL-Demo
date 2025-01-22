@@ -703,7 +703,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	RenderPass screenPass;
 	screenPass.scene = m_screenScene;
 	screenPass.parseScene(); //sorts UBOs for each actor
-	screenPass.target = std::make_shared<FBO>(); //Default FBO, the screenPass is where we draw to the screen
+	screenPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Default FBO, the screenPass is where we draw to the screen
 	screenPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	screenPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -796,7 +796,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	RenderPass forwardRenderPass;
 	forwardRenderPass.scene = m_forwardRenderScene;
 	forwardRenderPass.parseScene();
-	forwardRenderPass.target = std::make_shared<FBO>();
+	forwardRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout);
 	forwardRenderPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	forwardRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	forwardRenderPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
@@ -814,20 +814,47 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 		passed = forwardRenderPass.UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
 	}
 
-	//
 	m_forwardRenderer.addRenderPass(forwardRenderPass);
-	//m_previousRenderPassIndex++;
+	m_previousRenderPassIndex++;
 	m_forwardRenderScene->m_actors.at(0).attachScript<RotationScript>(forwardRenderPass.scene->m_actors.at(0), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
-	////forward render pass setup
+	//forward render pass setup
+
+	
+	//Screen Pass
+	m_screenScene.reset(new Scene);
+	std::shared_ptr<Material> FDscreenQuadMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab10/FDmixFrag.glsl", FDscreenQuadMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 3).target->getTarget(0));
+	FDscreenQuadMaterial->setValue("u_forwardTexture", m_forwardRenderer.getRenderPass(0).target->getTarget(0));
+	
+	FDscreenQuadMaterial->setValue("u_inputDepthTexture", GPass.target->getTarget(4));
+	FDscreenQuadMaterial->setValue("u_forwardDepthTexture", m_forwardRenderer.getRenderPass(0).target->getTarget(1));
+	screen.material = FDscreenQuadMaterial;
+	m_screenScene->m_actors.push_back(screen);
+
+	RenderPass FMmixScreenPass;
+	FMmixScreenPass.scene = m_screenScene;
+	FMmixScreenPass.parseScene(); //sorts UBOs for each actor
+	FMmixScreenPass.target = std::make_shared<FBO>(); //Default FBO, the screenPass is where we draw to the screen
+	FMmixScreenPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+
+	FMmixScreenPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	FMmixScreenPass.UBOmanager.setCachedValue("b_camera2D", "u_view", FMmixScreenPass.camera.view);
+	FMmixScreenPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", FMmixScreenPass.camera.projection);
+
+	m_previousRenderPassIndex++;
+	m_mainRenderer.addRenderPass(FMmixScreenPass);
+	//Screen Pass Set up
+
 
 	m_initRenderer.render();
 }
 
 void Lab9::onRender() const
 {
-	m_mainRenderer.render();
 	m_forwardRenderer.render();
+	m_mainRenderer.render();
 }
+
 void Lab9::onUpdate(float timestep)
 {
 	// per frame uniforms
