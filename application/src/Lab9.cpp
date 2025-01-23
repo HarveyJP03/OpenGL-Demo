@@ -312,13 +312,33 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboard.depthGeometry = billboardVAO;
 	m_mainScene->m_actors.push_back(billboard);
 
-
 	//particle system 
 	struct Particle
 	{
 		glm::vec4 position; //z = particle age
 		glm::vec4 velocity;
 	};
+
+	int numParts = 64;
+
+	std::shared_ptr<SSBO> particleSSBO;
+	particleSSBO = std::make_shared<SSBO>(sizeof(Particle) * numParts, numParts); //Size of SSBO, element count
+
+	ShaderDescription initParticlesComputeDesc;
+	initParticlesComputeDesc.type = ShaderType::compute;
+	initParticlesComputeDesc.computeSrcPath = "./assets/shaders/Lab10/compute_initParticles.glsl";
+	std::shared_ptr<Shader> computeInitParticlesShader = std::make_shared<Shader>(initParticlesComputeDesc);
+	
+	std::shared_ptr<Material>initParticlesMaterial = std::make_shared<Material>(computeInitParticlesShader);
+
+	ComputePass initParticlesComputePass;
+	initParticlesComputePass.material = initParticlesMaterial;
+	initParticlesComputePass.workgroups = { 8, 1, 1 }; //64 particles, workgroup is 2x2
+	initParticlesComputePass.barrier = MemoryBarrier::ShaderStorageAccess;
+	initParticlesComputePass.ssbo = particleSSBO;
+
+	m_initRenderer.addComputePass(initParticlesComputePass);
+	//ComputePass setup
 
 
 	//Depth Only Pass
@@ -849,6 +869,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 
 	m_initRenderer.render();
+	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 }
 
 void Lab9::onRender() const

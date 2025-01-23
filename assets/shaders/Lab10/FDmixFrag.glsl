@@ -25,7 +25,8 @@ void main()
 	}
 	else
 	{
-		texColour = mix(texture(u_forwardTexture, texCoord).rgb, texture(u_inputTexture, texCoord).rgb, 0.5f );
+		//texColour = mix(texture(u_inputTexture, texCoord).rgb, texture(u_forwardTexture, texCoord).rgb,  0.1f );
+		texColour =  texture(u_forwardTexture, texCoord).rgb;
 	}
 
 	if(forwardDepth > 0.9999f && inputDepth > 0.9999f)
