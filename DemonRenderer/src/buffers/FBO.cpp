@@ -22,7 +22,7 @@ FBO::FBO(glm::ivec2 size, FBOLayout layout) :
 			switch (type)
 			{
 			case AttachmentType::Colour:
-				td.channels = 3;
+				td.channels = 4;
 				m_sampledTargets.push_back(std::make_shared<Texture>(td));
 				thisAttachment = GL_COLOR_ATTACHMENT0 + colourAttachementCount;
 				glNamedFramebufferTexture(m_ID, thisAttachment, m_sampledTargets.back()->getID(), 0);
@@ -30,7 +30,7 @@ FBO::FBO(glm::ivec2 size, FBOLayout layout) :
 				colourAttachementCount++;
 				break;
 			case AttachmentType::ColourHDR:
-				td.channels = 3;
+				td.channels = 4;
 				td.isHDR = true;
 				m_sampledTargets.push_back(std::make_shared<Texture>(td));
 				thisAttachment = GL_COLOR_ATTACHMENT0 + colourAttachementCount;

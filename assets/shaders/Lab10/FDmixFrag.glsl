@@ -25,17 +25,18 @@ void main()
 	}
 	else
 	{
-		texColour = texture(u_forwardTexture, texCoord).rgb;
+		texColour = mix(texture(u_forwardTexture, texCoord).rgb, texture(u_inputTexture, texCoord).rgb, 0.5f );
 	}
 
 	if(forwardDepth > 0.9999f && inputDepth > 0.9999f)
 	{
 		texColour = texture(u_inputTexture, texCoord).rgb;
 	}
+
 	
-	texColour = aces(texColour); //tonemap
-	texColour = pow(texColour, vec3(1.0 / 2.2)); //gamma correct
-	ppColour = vec4(texColour, 1.0f);
+	//texColour = aces(texColour); //tonemap
+	//texColour = pow(texColour, vec3(1.0 / 2.2)); //gamma correct
+	ppColour = vec4(texColour, 0.25f);
 }
 
 vec3 aces(vec3 x)

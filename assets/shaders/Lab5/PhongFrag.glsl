@@ -88,7 +88,7 @@ void main()
 		//result += getSpotLight(i);
 	}
 	      
-	colour = vec4(result, 1.0) * texture(u_albedoMap, texCoord);
+	colour = vec4(result, 1.0f) * texture(u_albedoMap, texCoord);
 }
 
 

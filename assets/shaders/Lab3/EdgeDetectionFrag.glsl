@@ -31,7 +31,7 @@ void main()
 	float edgeVertical = abs(lumUp - lumDown); //Abs makes the number not negative
 	float edgeStrength = max(edgeHorizontal, edgeVertical); //edgeStrength = largest from two values
 
-	if(edgeStrength > u_edgeStrength) //GL_CLAMP_TO_EDGE in texture.cpp init fixes, may need undoing if other textures break
+	if(edgeStrength > u_edgeStrength && u_edgeStrength < 1.0f) //GL_CLAMP_TO_EDGE in texture.cpp init fixes, may need undoing if other textures break
 	{
 		colour = vec3(0.0f);
 	}
