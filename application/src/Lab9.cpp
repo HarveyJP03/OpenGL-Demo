@@ -312,6 +312,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboard.depthGeometry = billboardVAO;
 	m_mainScene->m_actors.push_back(billboard);
 
+	std::shared_ptr<SSBO> particleSSBO;
 	//particle system 
 	struct Particle
 	{
@@ -320,15 +321,13 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	};
 
 	int numParts = 64;
-
-	std::shared_ptr<SSBO> particleSSBO;
 	particleSSBO = std::make_shared<SSBO>(sizeof(Particle) * numParts, numParts); //Size of SSBO, element count
 
 	ShaderDescription initParticlesComputeDesc;
 	initParticlesComputeDesc.type = ShaderType::compute;
 	initParticlesComputeDesc.computeSrcPath = "./assets/shaders/Lab10/compute_initParticles.glsl";
 	std::shared_ptr<Shader> computeInitParticlesShader = std::make_shared<Shader>(initParticlesComputeDesc);
-	
+
 	std::shared_ptr<Material>initParticlesMaterial = std::make_shared<Material>(computeInitParticlesShader);
 
 	ComputePass initParticlesComputePass;
@@ -339,7 +338,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	m_initRenderer.addComputePass(initParticlesComputePass);
 	//ComputePass setup
-
 
 	//Depth Only Pass
 	FBOLayout prePassLayout =
@@ -868,6 +866,24 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Screen Pass Set up
 
 
+	//particle system 
+	ShaderDescription updateParticlesComputeDesc;
+	updateParticlesComputeDesc.type = ShaderType::compute;
+	updateParticlesComputeDesc.computeSrcPath = "./assets/shaders/Lab10/compute_updateParticles.glsl";
+	std::shared_ptr<Shader> computeUpdateParticlesShader = std::make_shared<Shader>(updateParticlesComputeDesc);
+
+	std::shared_ptr<Material>updateParticlesMaterial = std::make_shared<Material>(computeUpdateParticlesShader);
+
+	ComputePass updateParticlesComputePass;
+	updateParticlesComputePass.material = updateParticlesMaterial;
+	updateParticlesComputePass.workgroups = { 8, 1, 1 }; //64 particles, workgroup is 2x2
+	updateParticlesComputePass.barrier = MemoryBarrier::ShaderStorageAccess;
+	updateParticlesComputePass.ssbo = particleSSBO;
+
+	m_mainRenderer.addComputePass(updateParticlesComputePass);
+	
+
+
 	m_initRenderer.render();
 	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 }
@@ -876,6 +892,7 @@ void Lab9::onRender() const
 {
 	m_forwardRenderer.render();
 	m_mainRenderer.render();
+	//auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 }
 
 void Lab9::onUpdate(float timestep)
