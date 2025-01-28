@@ -337,6 +337,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	initParticlesComputePass.ssbo = particleSSBO;
 
 	m_initRenderer.addComputePass(initParticlesComputePass);
+	m_initRenderer.render();
 	//ComputePass setup
 
 	//Depth Only Pass
@@ -500,8 +501,36 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_screenScene.reset(new Scene);
 	//Light Pass Setup
 
-	//Pass for forward renderingw
+
+	//Create particles
+	ShaderDescription particleShaderDesc; //Path to source files and shader type, used to load the shader.
+	particleShaderDesc.type = ShaderType::geometry;
+	particleShaderDesc.vertexSrcPath = "./assets/shaders/Lab10/particleVert.glsl";
+	particleShaderDesc.geometrySrcPath = "./assets/shaders/Lab10/particleGeo.glsl";
+	particleShaderDesc.fragmentSrcPath = "./assets/shaders/Lab10/particleFrag.glsl";
+	std::shared_ptr<Shader> particleShader;
+	particleShader = std::make_shared<Shader>(particleShaderDesc);
+
+	std::shared_ptr<Material> particleMaterial;
+	particleMaterial = std::make_shared<Material>(particleShader);
+	particleMaterial->setPrimitive(GL_POINTS);
+
+	std::shared_ptr<Texture> particleTexture;
+	particleTexture = std::make_shared<Texture>("./assets/textures/Billboards/particle.png", GL_CLAMP_TO_EDGE);
+	particleMaterial->setValue("u_particleImage", particleTexture);
+	particleMaterial->setValue("u_defferedImage", LightPass.target->getTarget(0));
+
+
+	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
+	
+	Actor particle;
+	particle.material = particleMaterial;
+	particle.SSBOgeometry = particleSSBO;
+	//Particles Created
+
+	//Pass for forward rendering
 	m_forwardRenderScene->m_actors.push_back(cube);
+	m_forwardRenderScene->m_actors.push_back(particle);
 
 	RenderPass forwardRenderPass;
 	forwardRenderPass.scene = m_forwardRenderScene;
@@ -818,7 +847,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	textureComputePass.images.push_back(image);
 	m_previousRenderPassIndex++;
-	m_initRenderer.addComputePass(textureComputePass);
+	//m_initRenderer.addComputePass(textureComputePass);
 	m_mainRenderer.addComputePass(textureComputePass);
 
 	//ComputePass setup
@@ -857,7 +886,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	CDMComputePass.images.push_back(CDM_mapimage);
 	m_previousRenderPassIndex++;
-	m_initRenderer.addComputePass(CDMComputePass);
+	//m_initRenderer.addComputePass(CDMComputePass);
 	m_mainRenderer.addComputePass(CDMComputePass);
 	//ComputePass setup
 
@@ -882,10 +911,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addComputePass(updateParticlesComputePass);
 	
-
-
-	m_initRenderer.render();
-	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 }
 
 void Lab9::onRender() const
@@ -998,6 +1023,8 @@ void Lab9::onUpdate(float timestep)
 
 	if (m_animateWorley) noiseMaterial->setValue("u_animateWorley", 1.0f);
 	else noiseMaterial->setValue("u_animateWorley", 0.0f);
+
+	m_mainRenderer.getComputePass(3).material->setValue("u_deltaTime", m_deltaTimer.reset());
 }
 
 

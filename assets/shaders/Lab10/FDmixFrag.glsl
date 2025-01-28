@@ -19,19 +19,22 @@ void main()
 	float inputDepth = texture(u_inputDepthTexture, texCoord).r;
 	float forwardDepth = texture(u_forwardDepthTexture, texCoord).r;
 
+
 	if( inputDepth < forwardDepth )
 	{
 		texColour = texture(u_inputTexture, texCoord).rgb;
 	}
+	
 	else
 	{
-		//texColour = mix(texture(u_inputTexture, texCoord).rgb, texture(u_forwardTexture, texCoord).rgb,  0.1f );
-		texColour =  texture(u_forwardTexture, texCoord).rgb;
+		texColour = mix(texture(u_inputTexture, texCoord).rgb, texture(u_forwardTexture, texCoord).rgb,  texture(u_forwardTexture, texCoord).a );
+		//texColour =  texture(u_forwardTexture, texCoord).rgb;
 	}
 
 	if(forwardDepth > 0.9999f && inputDepth > 0.9999f)
 	{
 		texColour = texture(u_inputTexture, texCoord).rgb;
+		//texColour = vec3(0.0, 0.25, 0.75);
 	}
 
 	

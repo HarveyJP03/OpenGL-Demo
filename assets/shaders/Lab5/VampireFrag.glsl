@@ -33,7 +33,7 @@ void main()
  
 	gPosition = vec4(fragmentPos, 1.0);
 	gNormal = vec4(normal, 1.0);
-	gDiffSpec = vec4(albedoColour, specularStrength); //alpha channel always ends up as 1, fix this to remove gSpec alltogether
+	gDiffSpec = vec4(albedoColour, 1.0f); //alpha channel always ends up as 1, fix this to remove gSpec alltogether
 	gSpec = vec4(specularStrength);
 }
 

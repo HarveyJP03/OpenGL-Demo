@@ -16,6 +16,8 @@ private:
 	std::shared_ptr<Scene> m_screenScene; //Contains a single quad, which is used to draw the colour attachment from the main pass onto the screen
 	std::shared_ptr<Scene> skyBoxOnlyScene;
 
+	Timer m_deltaTimer;
+
 	std::shared_ptr<Scene> m_forwardRenderScene;
 
 	std::shared_ptr<Material> lightPassMaterial;

@@ -27,7 +27,7 @@ void main()
 	//vec3 tintedCol = mix(colour.rgb, colour.rgb * vec3(1.0, 1.0, 1.0), luminance);
 	      
 	gPosition = vec4(fragmentPos, 1.0);
-	gNormal = vec4(normal, 0.0);
+	gNormal = vec4(normal, 1.0);
 	gDiffSpec = colour;
 	gSpec = vec4(specularStrength);
 }
