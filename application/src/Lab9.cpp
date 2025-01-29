@@ -320,7 +320,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 		glm::vec4 velocity;
 	};
 
-	int numParts = 64;
+	int numParts = 256;
 	particleSSBO = std::make_shared<SSBO>(sizeof(Particle) * numParts, numParts); //Size of SSBO, element count
 
 	ShaderDescription initParticlesComputeDesc;
@@ -332,7 +332,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	ComputePass initParticlesComputePass;
 	initParticlesComputePass.material = initParticlesMaterial;
-	initParticlesComputePass.workgroups = { 8, 1, 1 }; //64 particles, workgroup is 2x2
+	initParticlesComputePass.workgroups = { 32, 1, 1 }; //64 particles, workgroup is 2x2
 	initParticlesComputePass.barrier = MemoryBarrier::ShaderStorageAccess;
 	initParticlesComputePass.ssbo = particleSSBO;
 
@@ -518,8 +518,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Texture> particleTexture;
 	particleTexture = std::make_shared<Texture>("./assets/textures/Billboards/particle.png", GL_CLAMP_TO_EDGE);
 	particleMaterial->setValue("u_particleImage", particleTexture);
-	particleMaterial->setValue("u_defferedImage", LightPass.target->getTarget(0));
-
 
 	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 	
@@ -905,7 +903,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	ComputePass updateParticlesComputePass;
 	updateParticlesComputePass.material = updateParticlesMaterial;
-	updateParticlesComputePass.workgroups = { 8, 1, 1 }; //64 particles, workgroup is 2x2
+	updateParticlesComputePass.workgroups = { 32, 1, 1 }; //64 particles, workgroup is 8 x 1
 	updateParticlesComputePass.barrier = MemoryBarrier::ShaderStorageAccess;
 	updateParticlesComputePass.ssbo = particleSSBO;
 
@@ -1025,6 +1023,12 @@ void Lab9::onUpdate(float timestep)
 	else noiseMaterial->setValue("u_animateWorley", 0.0f);
 
 	m_mainRenderer.getComputePass(3).material->setValue("u_deltaTime", m_deltaTimer.reset());
+
+	m_mainRenderer.getComputePass(3).material->setValue("u_speed", m_speed);
+	m_mainRenderer.getComputePass(3).material->setValue("u_emitterLocation", m_emitterLocation);
+	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeX", m_velocityRangeX);
+	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeY", m_velocityRangeY);
+	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeZ", m_velocityRangeZ);
 }
 
 
@@ -1127,6 +1131,16 @@ void Lab9::onImGUIRender()
 
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem("Particle System"))
+		{
+			ImGui::DragFloat("Speed", (float*)&m_speed, 0.01f, 0.0f, 5.0f);
+			ImGui::DragFloat2("Velocity Range X", (float*)&m_velocityRangeX, 0.05f, -1.0f, 1.0f);
+			ImGui::DragFloat2("Velocity Range Y", (float*)&m_velocityRangeY, 0.05f, -1.0f, 1.0f);
+			ImGui::DragFloat2("Velocity Range Z", (float*)&m_velocityRangeZ, 0.05f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Emitter Location", (float*)&m_emitterLocation, 0.001f);
+			ImGui::EndTabItem();
+		}
+
 
 		ImGui::EndTabBar();
 	}

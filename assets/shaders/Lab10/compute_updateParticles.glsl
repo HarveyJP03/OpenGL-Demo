@@ -3,6 +3,11 @@
 layout(local_size_x = 8, local_size_y = 1) in; //64 particles, 8x1 local, so 8x1 global = 64 in 1D
 
 uniform float u_deltaTime;
+uniform float u_speed;
+uniform vec3 u_emitterLocation;
+uniform vec2 u_velocityRangeX;
+uniform vec2 u_velocityRangeY;
+uniform vec2 u_velocityRangeZ;
 
 struct Particle
 {
@@ -30,17 +35,21 @@ void main()
 
 	if(particle[index].position.w <= 0.0f)
 	{
-		particle[index].position.xyz = vec3(0.0f, 10.0f, -9.0f); //emmitter postion
+		particle[index].position.xyz = u_emitterLocation; //emmitter postion
 		
-		float randomAge = rand(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.x * gl_GlobalInvocationID.x)); //age
-		randomAge = remap(randomAge, 0, 1, 0.5, 5);
+		float randomAge = rand(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.x)); //age
+		randomAge = remap(randomAge, 0, 1, 2.0, 5.0);
 		particle[index].position.w = randomAge;
 
 		float randx = rand(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.x * gl_GlobalInvocationID.x));
 		float randy = rand(vec2(gl_GlobalInvocationID.x, randx * gl_GlobalInvocationID.x));
 		float randz = rand(vec2(randy, randx * randy));
 	
-		particle[index].velocity = vec4(randomDirection(vec2(randz * randx - randy, randy * randx) ), 0.69f);
+		particle[index].velocity = vec4( randomDirection( vec2( randz * randx - randy, randy * randx ) ), 0.69f) * u_speed;
+		
+		particle[index].velocity.x = remap(particle[index].velocity.x, -1, 1, u_velocityRangeX.x, u_velocityRangeX.y);
+		particle[index].velocity.y = remap(particle[index].velocity.y, -1, 1, u_velocityRangeY.x, u_velocityRangeY.y);
+		particle[index].velocity.z = remap(particle[index].velocity.z, -1, 1, u_velocityRangeZ.x, u_velocityRangeZ.y);
 	}
 }
 
@@ -64,6 +73,7 @@ vec3 randomDirection(vec2 seed)
     float z = cos(phi);
     return vec3(x, y, z);
 }
+
 
 
 

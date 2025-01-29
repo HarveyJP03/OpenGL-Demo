@@ -3,7 +3,6 @@
 layout(location = 0) out vec4 colour;
 
 uniform sampler2D u_particleImage;
-uniform sampler2D u_defferedImage;
 
 in vec2 texCoord;
 in vec4 fpos;

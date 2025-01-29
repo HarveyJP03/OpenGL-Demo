@@ -132,4 +132,10 @@ private:
 	int m_noiseType = 0;
 	bool m_invertWorley = false;
 	bool m_animateWorley = false;
+
+	float m_speed = 1.0f;
+	glm::vec3 m_emitterLocation = glm::vec3(0.0f, 10.0f, -9.0f);
+	glm::vec2 m_velocityRangeX = glm::vec2(-1.0f, 1.0f);
+	glm::vec2 m_velocityRangeY = glm::vec2(-1.0f, 1.0f);
+	glm::vec2 m_velocityRangeZ = glm::vec2(-1.0f, 1.0f);
 };
