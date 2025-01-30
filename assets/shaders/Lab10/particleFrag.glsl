@@ -3,6 +3,7 @@
 layout(location = 0) out vec4 colour;
 
 uniform sampler2D u_particleImage;
+uniform vec3 u_particleColour;
 
 in vec2 texCoord;
 in vec4 fpos;
@@ -16,7 +17,7 @@ void main()
 	
 	colour.a -= remap(fpos.w, 5.0, 0.0, 0.0, 1.0);
 	colour.a = clamp(colour.a, 0.0f, 1.0f);
-	colour.rgb *= vec3 (0.0, 1.0, 0.0);
+	colour.rgb *= u_particleColour;
 
 }
 

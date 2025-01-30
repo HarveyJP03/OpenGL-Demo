@@ -25,7 +25,7 @@ private:
 
 	std::shared_ptr<Material> noiseMaterial;
 
-	int m_numPointLights = 30;
+	int m_numPointLights = 1;
 
 	//In header, as needs to be accessed from update() to set the colour through ImGui
 	float m_edgeStrength = 1.0f;
@@ -37,6 +37,8 @@ private:
 	int m_edgeDetectionPassIndex = -1;
 	int m_fogPassIndex = -1;
 	int m_dofPassIndex = -1;
+	int m_sepiaPassIndex = -1;
+	float m_tiltShiftPassIndex = -1;
 
 	//To create view and projection matrices for camrea at light position
 	struct ShadowMapVars
@@ -115,7 +117,7 @@ private:
 	//Gui
 	glm::vec3 m_vampireColour{ 1.0 };
 	glm::vec3 m_tintColour{ 0.0 };
-	float m_blurRadius = 1.25f;
+	float m_blurRadius = 1.0f;
 	bool m_wireFrame = false;
 	float m_focusDistance = 0.25f;
 	glm::vec3 m_lightDirection{ glm::vec3(-0.2, -1.0, -0.5) };
@@ -124,18 +126,24 @@ private:
 	bool m_geoNormal = false;
 	float m_tiltIntensity = 0.125f;
 
+	//noise
 	float m_frequency = 5.0f;
 	float m_amplitude = 1.5f;
 	float m_lacunarity = 2.0f;
 	float m_persistence = 0.5f;
-
-	int m_noiseType = 0;
+	int m_noiseType = 1;
 	bool m_invertWorley = false;
 	bool m_animateWorley = false;
 
+	//particles
 	float m_speed = 1.0f;
+	bool m_attachToCube = true;
+	glm::vec3 m_particleColour = glm::vec3(1.0f, 1.0f, 0.0f);
 	glm::vec3 m_emitterLocation = glm::vec3(0.0f, 10.0f, -9.0f);
 	glm::vec2 m_velocityRangeX = glm::vec2(-1.0f, 1.0f);
 	glm::vec2 m_velocityRangeY = glm::vec2(-1.0f, 1.0f);
 	glm::vec2 m_velocityRangeZ = glm::vec2(-1.0f, 1.0f);
+
+	bool m_sepia = false;
+	int m_blurType = 0.0f;
 };

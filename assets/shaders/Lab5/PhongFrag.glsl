@@ -31,7 +31,7 @@ struct spotLight
 	float outerCutOff;
 };
 
-const int numPointLights = 30;
+const int numPointLights = 1;
 const int numSpotLights = 1;
 
 layout (std140, binding = 2) uniform b_lights
@@ -50,13 +50,11 @@ layout (std140, binding = 1) uniform b_camera
 
 
 uniform sampler2D u_albedoMap;
-
-
+uniform vec3 u_albedo;
 
 vec3 getDirectionalLight() ;
 vec3 getPointLight(int idx) ;
 vec3 getSpotLight(int idx) ;
-
 
 //global vars
 vec3 normal ;
@@ -70,9 +68,7 @@ void main()
 	vec3 result = vec3(0.0, 0.0, 0.0); 
     viewDir = normalize(u_viewPos - fragmentPos);
 	normal = normalize(vertexNormal) ;
-	albedoColour = texture(u_albedoMap, texCoord).rgb;
-
-
+	albedoColour = texture(u_albedoMap, texCoord).rgb * u_albedo;
 
 	// light casters
 
@@ -88,7 +84,7 @@ void main()
 		//result += getSpotLight(i);
 	}
 	      
-	colour = vec4(result, 1.0f) * texture(u_albedoMap, texCoord);
+	colour = vec4(result, 1.0f) * vec4(albedoColour, 1.0);
 }
 
 

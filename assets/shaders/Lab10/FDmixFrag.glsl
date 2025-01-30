@@ -27,20 +27,17 @@ void main()
 	
 	else
 	{
+		//Becuase of the fact I need to do two seperate passes, the pixles behind forward render for transparency are black, since its a seperate scene, so manually blend here
 		texColour = mix(texture(u_inputTexture, texCoord).rgb, texture(u_forwardTexture, texCoord).rgb,  texture(u_forwardTexture, texCoord).a );
-		//texColour =  texture(u_forwardTexture, texCoord).rgb;
 	}
 
 	if(forwardDepth > 0.9999f && inputDepth > 0.9999f)
 	{
 		texColour = texture(u_inputTexture, texCoord).rgb;
-		//texColour = vec3(0.0, 0.25, 0.75);
 	}
 
 	
-	//texColour = aces(texColour); //tonemap
-	//texColour = pow(texColour, vec3(1.0 / 2.2)); //gamma correct
-	ppColour = vec4(texColour, 0.25f);
+	ppColour = vec4(texColour, 1.0f);
 }
 
 vec3 aces(vec3 x)

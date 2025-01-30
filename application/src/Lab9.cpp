@@ -8,12 +8,11 @@
 
 Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 {
-
 	m_mainScene.reset(new Scene); //Scene holds everything in the scene; actors + lights
-	m_forwardRenderScene.reset(new Scene);
+	m_forwardRenderScene.reset(new Scene); //Seperate Scene for forward rendering
 
+	//Depth only material for shadow mapping
 	VBOLayout depthLayout = { {GL_FLOAT, 3} };
-	//Set Up Depth Only Pass Material
 	ShaderDescription depthShaderDesc;
 	depthShaderDesc.type = ShaderType::rasterization;
 	depthShaderDesc.vertexSrcPath = "./assets/shaders/Lab4/ShadowVert.glsl";
@@ -53,8 +52,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	cube.translation = glm::vec3(0.f, 5.f, -9.f);
 	cube.scale = glm::vec3(0.25f);
 	cube.recalc();
-	//modelIdx = m_mainScene->m_actors.size();
-	//m_mainScene->m_actors.push_back(cube);
+	//Add to forward rendering scene later on
 
 
 	//** Creating Floor
@@ -62,7 +60,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::vector<float> floor_vertices = grid->getVertices();
 	std::vector<unsigned int> floor_indices = grid->getIndices();
 
-	ShaderDescription floorShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription floorShaderDesc;
 	floorShaderDesc.type = ShaderType::tessellationAndGeometry;
 	floorShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/FloorVert.glsl";
 	floorShaderDesc.controlSrcPath = "./assets/shaders/Lab7/FloorTCS.glsl";
@@ -118,7 +116,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 
 	//**Creating Vampire
-	ShaderDescription vampireShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription vampireShaderDesc;
 	vampireShaderDesc.type = ShaderType::rasterization;
 	vampireShaderDesc.vertexSrcPath = "./assets/shaders/Lab5/VampireVert.glsl";
 	vampireShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/VampireFrag.glsl";
@@ -176,8 +174,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	vampire.recalc();
 	vampireIdx = m_mainScene->m_actors.size();
 	m_mainScene->m_actors.push_back(vampire);
-	//**Vampire Created
-
 
 	for (int i = 0; i < 10; i++)
 	{
@@ -191,6 +187,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 		vamp.recalc();
 		m_mainScene->m_actors.push_back(vamp);
 	}
+	//**Vampires Created
 
 	DirectionalLight dl;
 	dl.direction = glm::normalize(m_lightDirection);
@@ -199,27 +196,15 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_forwardRenderScene->m_directionalLights.push_back(dl);
 
 	PointLight pointLight;
-	m_numPointLights = 60;
+	m_numPointLights = 1;
 
 
-	for (int i = 0; i < m_numPointLights; i++)
-	{
-		if (i == 0)
-		{
-			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
-			pointLight.position = glm::vec3(0.0f, 5.f, -9.0f);
-			pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
-		}
+	//No need to iterate over point lights here, as I only have 1 in the scene
+	pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
+	pointLight.position = glm::vec3(0.0f, 5.f, -9.0f);
+	pointLight.constants = glm::vec3(1.0f, 0.22f, 0.2f);
 
-		else
-		{
-			pointLight.colour = glm::vec3(Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0), Randomiser::uniformFloatBetween(0.0, 1.0));
-			pointLight.position = glm::vec3(Randomiser::uniformFloatBetween(-30.0, 30.0), -4.0f, Randomiser::uniformFloatBetween(0.0, -80.0));
-			pointLight.constants = glm::vec3(1.0f, 0.14f, 0.07f);
-		}
-
-		m_mainScene->m_pointLights.push_back(pointLight);
-	}
+	m_mainScene->m_pointLights.push_back(pointLight);
 
 
 	//Creating Skybox**
@@ -243,7 +228,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<CubeMap> cubeMap;
 	cubeMap = std::make_shared<CubeMap>(cubeMapPaths, false, false);
 
-	ShaderDescription skyboxShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription skyboxShaderDesc;
 	skyboxShaderDesc.type = ShaderType::rasterization;
 	skyboxShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/SkyBoxVert.glsl";
 	skyboxShaderDesc.fragmentSrcPath = "./assets/shaders/Lab2/SkyBoxFrag.glsl";
@@ -265,7 +250,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	camera.translation = glm::vec3(0.0f, 10.0f, 0.0f);
 	m_mainScene->m_actors.push_back(camera);
 
-	
+	//Tree billboards
 	std::vector<float> billboardPositions; //GEO shader for billboards will create all billboards in scene, pass it all positions and for each position it will create a billboard
 	std::shared_ptr<VAO> billboardVAO;
 	std::vector<uint32_t> billboardIndices = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -278,7 +263,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboardVAO = std::make_shared<VAO>(billboardIndices);
 	billboardVAO->addVertexBuffer(billboardPositions, { {GL_FLOAT, 3} });
 
-	ShaderDescription billboardShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription billboardShaderDesc;
 	billboardShaderDesc.type = ShaderType::geometry;
 	billboardShaderDesc.vertexSrcPath = "./assets/shaders/Lab6/BillboardVert.glsl";
 	billboardShaderDesc.geometrySrcPath = "./assets/shaders/Lab6/BillboardGeo.glsl";
@@ -311,9 +296,10 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboard.depthMaterial = billboardDepthPassMaterial;
 	billboard.depthGeometry = billboardVAO;
 	m_mainScene->m_actors.push_back(billboard);
+	//Tree Billboards set up
 
-	std::shared_ptr<SSBO> particleSSBO;
-	//particle system 
+
+	//Set up particle SSBO and initiailse	
 	struct Particle
 	{
 		glm::vec4 position; //z = particle age
@@ -321,7 +307,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	};
 
 	int numParts = 256;
-	particleSSBO = std::make_shared<SSBO>(sizeof(Particle) * numParts, numParts); //Size of SSBO, element count
+	std::shared_ptr<SSBO>particleSSBO = std::make_shared<SSBO>(sizeof(Particle) * numParts, numParts); //Size of SSBO, element count
 
 	ShaderDescription initParticlesComputeDesc;
 	initParticlesComputeDesc.type = ShaderType::compute;
@@ -332,27 +318,18 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	ComputePass initParticlesComputePass;
 	initParticlesComputePass.material = initParticlesMaterial;
-	initParticlesComputePass.workgroups = { 32, 1, 1 }; //64 particles, workgroup is 2x2
+	initParticlesComputePass.workgroups = { 32, 1, 1 }; //256 particles, work groups are 8x1
 	initParticlesComputePass.barrier = MemoryBarrier::ShaderStorageAccess;
 	initParticlesComputePass.ssbo = particleSSBO;
 
 	m_initRenderer.addComputePass(initParticlesComputePass);
 	m_initRenderer.render();
-	//ComputePass setup
+	//Particle initialisation set up
 
 	//Depth Only Pass
 	FBOLayout prePassLayout =
 	{
 		{ AttachmentType::Depth, true }
-	};
-
-	FBOLayout GBufferLayout =
-	{
-		{AttachmentType::ColourHDR, true},
-		{AttachmentType::ColourHDR, true},
-		{AttachmentType::ColourHDR, true},
-		{AttachmentType::ColourHDR, true},
-		{AttachmentType::Depth, true}
 	};
 
 	//Shadow pass
@@ -394,8 +371,16 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 		{AttachmentType::Depth, true}
 	};
 
+	FBOLayout GBufferLayout =
+	{
+		{AttachmentType::ColourHDR, true},
+		{AttachmentType::ColourHDR, true},
+		{AttachmentType::ColourHDR, true},
+		{AttachmentType::ColourHDR, true},
+		{AttachmentType::Depth, true}
+	};
 
-	//Gpass
+	//G Pass
 	RenderPass GPass;
 	GPass.scene = m_mainScene;
 	GPass.parseScene();
@@ -408,11 +393,11 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	GPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
 	m_mainRenderer.addRenderPass(GPass);
 	m_previousRenderPassIndex++;
-	//Gpass setup
+	//G Pass setup
 
 	m_mainScene->m_actors.at(cameraIdx).attachScript<CameraScript>(GPass.scene->m_actors.at(cameraIdx), m_winRef, glm::vec3(1.6f, 0.6f, 2.f) * 2.0f, 2.5f);
-	//m_mainScene->m_actors.at(modelIdx).attachScript<RotationScript>(GPass.scene->m_actors.at(modelIdx), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 
+	//Screen Quad
 	float width = m_winRef.getWidthf();
 	float height = m_winRef.getHeightf();
 	const std::vector<float> screenVertices =
@@ -431,11 +416,10 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	screenQuadVAO = std::make_shared<VAO>(screenIndices);
 	screenQuadVAO->addVertexBuffer(screenVertices, screenQuadLayout);
 	Actor screen;
-	//std::shared_ptr<Actor> screen = std::make_shared<Actor>(quad);
 	screen.geometry = screenQuadVAO;
 
-	//For Post processing render passes, use screen (quad) as input texture
-	m_screenScene.reset(new Scene);
+	m_screenScene.reset(new Scene); 	//For Post processing render passes, use screen (quad) as input texture
+	//Screen Quad set up
 
 
 	//Skybox Only Pass
@@ -454,11 +438,11 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	skyBoxPass.UBOmanager.setCachedValue("b_camera", "u_viewPos", m_mainScene->m_actors.at(cameraIdx).translation);
 	m_mainRenderer.addRenderPass(skyBoxPass);
 	m_previousRenderPassIndex++;
-	//Skybox pass set up
+	//Skybox only pass set up
 
 
 	//Light Pass
-	ShaderDescription lightPassShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription lightPassShaderDesc;
 	lightPassShaderDesc.type = ShaderType::rasterization;
 	lightPassShaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
 	lightPassShaderDesc.fragmentSrcPath = "./assets/shaders/Lab5/LightPassFrag.glsl";
@@ -503,7 +487,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 
 	//Create particles
-	ShaderDescription particleShaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription particleShaderDesc;
 	particleShaderDesc.type = ShaderType::geometry;
 	particleShaderDesc.vertexSrcPath = "./assets/shaders/Lab10/particleVert.glsl";
 	particleShaderDesc.geometrySrcPath = "./assets/shaders/Lab10/particleGeo.glsl";
@@ -518,8 +502,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Texture> particleTexture;
 	particleTexture = std::make_shared<Texture>("./assets/textures/Billboards/particle.png", GL_CLAMP_TO_EDGE);
 	particleMaterial->setValue("u_particleImage", particleTexture);
-
-	auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 	
 	Actor particle;
 	particle.material = particleMaterial;
@@ -557,7 +539,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//forward render pass setup
 
 
-	//Screen Pass
+
+	//Mix Forward Render Scene and Deffered Render Scene based off of depth here
 	m_screenScene.reset(new Scene);
 	std::shared_ptr<Material> FDscreenQuadMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab10/FDmixFrag.glsl", FDscreenQuadMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
@@ -581,8 +564,10 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_previousRenderPassIndex++;
 	m_mainRenderer.addRenderPass(FMmixScreenPass);
 	m_screenScene.reset(new Scene);
+	//Forward and Deferred Rendering mix done
 
 
+	//Linearise and render depth (redundant)
 	////Depth Render Pass
 	//std::shared_ptr<Material> depthRenderMaterial;
 	//SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, shadowPass.target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
@@ -606,7 +591,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 
 	//Fog Render Pass
-
 	std::shared_ptr<Material> fogRenderMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/FogFrag.glsl", fogRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
 	fogRenderMaterial->setValue("u_depthTexture", GPass.target->getTarget(4));
@@ -631,7 +615,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Fog Render Pass Setup
 
 
-	//Edge Detection Pass : Need to comment setting of u_edgeStrength in onUpdate if commenting this out
+	//Edge Detection Pass (Outlines)
 	std::shared_ptr<Material> edgeDetectionMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/EdgeDetectionFrag.glsl", edgeDetectionMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	edgeDetectionMaterial->setValue("u_screenSize", glm::vec2(width, height));
@@ -656,7 +640,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Edge Detection Pass completed
 
 
-	//Tint pass : Need to comment setting of u_tintColour in onUpdate if commenting this out
+	//Tint pass (black == no tint)
 	std::shared_ptr<Material> tintMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab2/TintFrag.glsl", tintMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	screen.material = tintMaterial;
@@ -679,29 +663,30 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Tint Pass setup
 
 
-	////Sepia Pass
-	//std::shared_ptr<Material> sepiaMaterial;
-	//SetUpPPMaterial("./assets/shaders/Lab2/SepiaFrag.glsl", sepiaMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	//screen.material = sepiaMaterial;
-	//m_screenScene->m_actors.push_back(screen);
-	//
-	//RenderPass sepiaPass;
-	//sepiaPass.scene = m_screenScene;
-	//sepiaPass.parseScene(); //sorts UBOs for each actor
-	//sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	//sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//Sepia Pass
+	std::shared_ptr<Material> sepiaMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab2/SepiaFrag.glsl", sepiaMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	screen.material = sepiaMaterial;
+	m_screenScene->m_actors.push_back(screen);
+	
+	RenderPass sepiaPass;
+	sepiaPass.scene = m_screenScene;
+	sepiaPass.parseScene(); //sorts UBOs for each actor
+	sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	//sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	//sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_view", sepiaPass.camera.view);
-	//sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", sepiaPass.camera.projection);
+	sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_view", sepiaPass.camera.view);
+	sepiaPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", sepiaPass.camera.projection);
 
-	//m_mainRenderer.addRenderPass(sepiaPass);
-	//m_previousRenderPassIndex++;
-	//m_screenScene.reset(new Scene);
-	////Sepia Pass Setup
+	m_mainRenderer.addRenderPass(sepiaPass);
+	m_previousRenderPassIndex++;
+	m_sepiaPassIndex = m_previousRenderPassIndex;
+	m_screenScene.reset(new Scene);
+	//Sepia Pass Setup
 
 
-	//Blur Pass
+	//Blur Pass (for tilt shift or depth of field, both cannot be active at the same time)
 	std::shared_ptr<Material> blurMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
@@ -725,35 +710,36 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	m_screenScene.reset(new Scene);
 	//Blur Pass Completed
 
-	////Depth of Field Pass
-	//std::shared_ptr<Material> dofMaterial;
-	//SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
-	//dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
-	//dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4)); //Main pass has depth buffer attached to target(1).
-	//dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass hasdepth buffer attached to target(1).
-	//screen.material = dofMaterial;
-	//m_screenScene->m_actors.push_back(screen);
 
-	//RenderPass dofPass;
-	//dofPass.scene = m_screenScene;
-	//dofPass.parseScene(); //sorts UBOs for each actor
-	//dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
-	//dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
+	//Depth of Field Pass
+	std::shared_ptr<Material> dofMaterial;
+	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
+	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_blurPassIndex).target->getTarget(0));
+	dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4)); //Main pass has depth buffer attached to target(1).
+	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass hasdepth buffer attached to target(1).
+	screen.material = dofMaterial;
+	m_screenScene->m_actors.push_back(screen);
 
-	//dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
-	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
-	//dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
+	RenderPass dofPass;
+	dofPass.scene = m_screenScene;
+	dofPass.parseScene(); //sorts UBOs for each actor
+	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
-	//m_mainRenderer.addRenderPass(dofPass);
-	//m_previousRenderPassIndex++;
-	//m_dofPassIndex = m_previousRenderPassIndex;
-	//m_screenScene.reset(new Scene);
-	////Depth of Field pass completed
+	dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
+	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_view", dofPass.camera.view);
+	dofPass.UBOmanager.setCachedValue("b_camera2D", "u_projection", dofPass.camera.projection);
+
+	m_mainRenderer.addRenderPass(dofPass);
+	m_previousRenderPassIndex++;
+	m_dofPassIndex = m_previousRenderPassIndex;
+	m_screenScene.reset(new Scene);
+	//Depth of Field pass completed
 
 
 	//Tilt Shift Pass
-	SetUpPPMaterial("./assets/shaders/Lab8/tiltShiftFrag.glsl", tiltShiftMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0));
-	tiltShiftMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	SetUpPPMaterial("./assets/shaders/Lab8/tiltShiftFrag.glsl", tiltShiftMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
+	tiltShiftMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_blurPassIndex).target->getTarget(0));
 	screen.material = tiltShiftMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
@@ -769,6 +755,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	m_mainRenderer.addRenderPass(tiltShiftPass);
 	m_previousRenderPassIndex++;
+	m_tiltShiftPassIndex = m_previousRenderPassIndex;
 	m_screenScene.reset(new Scene);
 	//Tilt Shift Pass Completed
 
@@ -816,48 +803,46 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Screen Pass Set up
 
 
-	//Compute Pass
-	TextureDescription textDesc;
-	textDesc.width = 1024;
-	textDesc.height = 1024;
-	textDesc.channels = 4;
-	textDesc.isHDR = false;
-	std::shared_ptr<Texture>heightMapTexture = std::make_shared<Texture>(textDesc); //empty texture to write to with compute
+	//Compute to create height map
+	TextureDescription computeNoiseTextureDesc;
+	computeNoiseTextureDesc.width = 1024;
+	computeNoiseTextureDesc.height = 1024;
+	computeNoiseTextureDesc.channels = 4;
+	computeNoiseTextureDesc.isHDR = false;
+	std::shared_ptr<Texture>heightMapTexture = std::make_shared<Texture>(computeNoiseTextureDesc); //empty texture to write to with compute
 
-	ShaderDescription textureComputeDesc;
-	textureComputeDesc.type = ShaderType::compute;
-	textureComputeDesc.computeSrcPath = "./assets/shaders/Lab9/compute_noise.glsl";
+	ShaderDescription computeNoiseDesc;
+	computeNoiseDesc.type = ShaderType::compute;
+	computeNoiseDesc.computeSrcPath = "./assets/shaders/Lab9/compute_noise.glsl";
 
-	std::shared_ptr<Shader> computeTestShader = std::make_shared<Shader>(textureComputeDesc);
-	noiseMaterial = std::make_shared<Material>(computeTestShader);
+	std::shared_ptr<Shader> computeNoiseShader = std::make_shared<Shader>(computeNoiseDesc);
+	noiseMaterial = std::make_shared<Material>(computeNoiseShader);
 
-	ComputePass textureComputePass;
-	textureComputePass.material = noiseMaterial;
-	textureComputePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
-	textureComputePass.barrier = MemoryBarrier::ShaderImageAccess;
+	ComputePass computeNoisePass;
+	computeNoisePass.material = noiseMaterial;
+	computeNoisePass.workgroups = { 32, 32, 1 }; //Workgroup = block containing threads
+	computeNoisePass.barrier = MemoryBarrier::ShaderImageAccess;
 
 	Image image;
 	image.mipLevel = 0;
 	image.layered = false;
 	image.texture = heightMapTexture;
-	image.imageUnit = textureComputePass.material->m_shader->m_imageBindingPoints["outputImg"];
+	image.imageUnit = computeNoisePass.material->m_shader->m_imageBindingPoints["outputImg"];
 	image.access = TextureAccess::WriteOnly;
 
-	textureComputePass.images.push_back(image);
+	computeNoisePass.images.push_back(image);
 	m_previousRenderPassIndex++;
-	//m_initRenderer.addComputePass(textureComputePass);
-	m_mainRenderer.addComputePass(textureComputePass);
-
-	//ComputePass setup
+	m_mainRenderer.addComputePass(computeNoisePass); //In main renderer rather than init renderer, so you can change noise values during run time
+	//Height Map Compute Passs set up
 
 
-	//Compute Pass
-	TextureDescription CDMtextDesc;
-	CDMtextDesc.width = 1024;
-	CDMtextDesc.height = 1024;
-	CDMtextDesc.channels = 4;
-	CDMtextDesc.isHDR = true;
-	std::shared_ptr<Texture>CDMterrainNormalsTexture = std::make_shared<Texture>(CDMtextDesc); //empty texture to write to with compute
+	//Compute Pass, create normal map for height map
+	TextureDescription CDMcomputeNoiseTextureDesc;
+	CDMcomputeNoiseTextureDesc.width = 1024;
+	CDMcomputeNoiseTextureDesc.height = 1024;
+	CDMcomputeNoiseTextureDesc.channels = 4;
+	CDMcomputeNoiseTextureDesc.isHDR = true;
+	std::shared_ptr<Texture>CDMterrainNormalsTexture = std::make_shared<Texture>(CDMcomputeNoiseTextureDesc); //empty texture to write to with compute
 
 	ShaderDescription textureCDMComputeDesc;
 	textureCDMComputeDesc.type = ShaderType::compute;
@@ -884,16 +869,12 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	CDMComputePass.images.push_back(CDM_mapimage);
 	m_previousRenderPassIndex++;
-	//m_initRenderer.addComputePass(CDMComputePass);
 	m_mainRenderer.addComputePass(CDMComputePass);
-	//ComputePass setup
+	//CDM ComputePass setup
 
 	floor.material->setValue("u_normalHeightMap", CDMterrainNormalsTexture);
 	
-	//Screen Pass Set up
-
-
-	//particle system 
+	//Compute pass to update particles per frame
 	ShaderDescription updateParticlesComputeDesc;
 	updateParticlesComputeDesc.type = ShaderType::compute;
 	updateParticlesComputeDesc.computeSrcPath = "./assets/shaders/Lab10/compute_updateParticles.glsl";
@@ -908,60 +889,62 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	updateParticlesComputePass.ssbo = particleSSBO;
 
 	m_mainRenderer.addComputePass(updateParticlesComputePass);
-	
+	//Update particles pass complete
 }
 
 void Lab9::onRender() const
 {
 	m_forwardRenderer.render();
 	m_mainRenderer.render();
-	//auto ssboParticles = particleSSBO->writeToCPU<Particle>();
 }
 
 void Lab9::onUpdate(float timestep)
 {
 	// per frame uniforms
-	//auto cubeMat = m_mainScene->m_actors.at(modelIdx).material;
-	auto cubeMat = m_forwardRenderScene->m_actors.at(0).material;
 
 	auto floorMat = m_mainScene->m_actors.at(floorIdx).material;
 	floorMat->setValue("u_remapRange", m_remapRange);
 
-	//Convert from bool to float, as passing in a boolas uniform causes a crash (same with an int too?)
+	//Convert from bool to float, as passing in a bool as uniform causes a crash (same with an int too?)
 	if (m_geoNormal) floorMat->setValue("u_geoNormal", 0.0f);
 	else floorMat->setValue("u_geoNormal", 1.0f);
 
+	//directional lights
 	m_mainScene->m_directionalLights.at(0).direction = glm::normalize(m_lightDirection);
 	m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
-	
 	m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "dLight.direction", m_mainScene->m_directionalLights.at(0).direction);
 
 	for (int i = 0; i < m_numPointLights; i++)
 	{
 		m_mainScene->m_pointLights.at(0).position = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
 		
-		//m_mainScene->m_actors.at(modelIdx).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
 		m_forwardRenderScene->m_actors.at(0).translation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
+		if(m_attachToCube)m_emitterLocation = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()) * 4 + 10.0f, -9.0f);
 
-		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
-		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
-		//m_mainRenderer.getRenderPass(3).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
-
-		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_mainScene->m_pointLights.at(i).colour);
+		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].colour", m_particleColour);
 		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].position", m_mainScene->m_pointLights.at(i).position);
 		m_forwardRenderer.getRenderPass(0).UBOmanager.setCachedValue("b_lights", "pLights[" + std::to_string(i) + "].constants", m_mainScene->m_pointLights.at(i).constants);
 	}
+
+	if (m_attachToCube) m_speed = 0.2f; //If particle system is attahced to cube position, lock speed as it looks really good with lower speed
 
 	m_mainRenderer.getRenderPass(0).drawInWireFrame = m_wireFrame;
 
 	auto& skyBox = skyBoxOnlyScene->m_actors.at(0);
 	skyBox.material->setValue("u_skyBoxView", glm::mat4(glm::mat3(m_mainRenderer.getRenderPass(0).camera.view)));
 
+	//These only show up in the GUI if the pass exists (commented out = not in GUI)
 	if (m_tintPassIndex != -1) m_mainRenderer.getRenderPass(m_tintPassIndex).scene->m_actors.at(0).material->setValue("u_tintColour", m_tintColour);
 	if (m_blurPassIndex != -1) m_mainRenderer.getRenderPass(m_blurPassIndex).scene->m_actors.at(0).material->setValue("u_blurRadius", m_blurRadius);
 	if (m_edgeDetectionPassIndex != -1) m_mainRenderer.getRenderPass(m_edgeDetectionPassIndex).scene->m_actors.at(0).material->setValue("u_edgeStrength", m_edgeStrength);
 	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
 	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
+
+	m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_active", (float)m_blurType);
+	//m_mainRenderer.getRenderPass(m_tiltShiftPassIndex).scene->m_actors.at(0).material->setValue("u_active", (float)m_blurType);
+
+	if(m_sepia) m_mainRenderer.getRenderPass(m_sepiaPassIndex).scene->m_actors.at(0).material->setValue("u_active", 1.0f);
+	else m_mainRenderer.getRenderPass(m_sepiaPassIndex).scene->m_actors.at(0).material->setValue("u_active", 0.0f);
 
 
 	//Update scripts
@@ -1005,13 +988,12 @@ void Lab9::onUpdate(float timestep)
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
-	tiltShiftMaterial->setValue("u_intensity", m_tiltIntensity);
+	//tiltShiftMaterial->setValue("u_intensity", m_tiltIntensity);
 
 	noiseMaterial->setValue("u_frequency", m_frequency);
 	noiseMaterial->setValue("u_amplitude", m_amplitude);
 	noiseMaterial->setValue("u_lacunarity", m_lacunarity);
 	noiseMaterial->setValue("u_persistence", m_persistence);
-
 
 	noiseMaterial->setValue("u_noiseType", (float)m_noiseType);
 	noiseMaterial->setValue("u_time", (float)glfwGetTime());
@@ -1022,13 +1004,17 @@ void Lab9::onUpdate(float timestep)
 	if (m_animateWorley) noiseMaterial->setValue("u_animateWorley", 1.0f);
 	else noiseMaterial->setValue("u_animateWorley", 0.0f);
 
+	//per frame particle uniforms
 	m_mainRenderer.getComputePass(3).material->setValue("u_deltaTime", m_deltaTimer.reset());
-
 	m_mainRenderer.getComputePass(3).material->setValue("u_speed", m_speed);
 	m_mainRenderer.getComputePass(3).material->setValue("u_emitterLocation", m_emitterLocation);
 	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeX", m_velocityRangeX);
 	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeY", m_velocityRangeY);
 	m_mainRenderer.getComputePass(3).material->setValue("u_velocityRangeZ", m_velocityRangeZ);
+
+	m_forwardRenderScene->m_actors.at(1).material->setValue("u_particleColour", m_particleColour);
+	m_forwardRenderScene->m_actors.at(0).material->setValue("u_albedo", m_particleColour);
+
 }
 
 
@@ -1077,12 +1063,16 @@ void Lab9::onImGUIRender()
 		}
 		if (ImGui::BeginTabItem("Post Processing"))
 		{
+			ImGui::Checkbox("Sepia", &m_sepia);
 			if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
 			if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 			if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 2.0f);
 			if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
 			if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
-			ImGui::DragFloat("Tilt Intensity", (float*)&m_tiltIntensity, 0.01f, 0.f, 1.0f);
+			ImGui::DragFloat("Tilt Intensity", (float*)&m_tiltIntensity, 0.001f, 0.0f, 0.24f);
+			ImGui::RadioButton("Tilt Shift", &m_blurType, 0);
+			ImGui::SameLine();
+			ImGui::RadioButton("Depth Of Field + Tilt Shift", &m_blurType, 1);
 
 			ImGui::EndTabItem();
 		}
@@ -1114,14 +1104,12 @@ void Lab9::onImGUIRender()
 			if(m_noiseType == 5) ImGui::Checkbox("Invert", &m_invertWorley);
 			if (m_noiseType == 5) ImGui::Checkbox("Animate", &m_animateWorley);
 			
-			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 #
-			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			textureID = m_mainRenderer.getComputePass(2).images[0].texture->getID();
 			imageSize = ImVec2(512, 512);
 			uv0 = ImVec2(0.0f, 1.0f);
@@ -1134,10 +1122,12 @@ void Lab9::onImGUIRender()
 		if (ImGui::BeginTabItem("Particle System"))
 		{
 			ImGui::DragFloat("Speed", (float*)&m_speed, 0.01f, 0.0f, 5.0f);
+			ImGui::Checkbox("Cube Trail", &m_attachToCube);
+			ImGui::ColorEdit3("Particle Colour", (float*)&m_particleColour);
 			ImGui::DragFloat2("Velocity Range X", (float*)&m_velocityRangeX, 0.05f, -1.0f, 1.0f);
 			ImGui::DragFloat2("Velocity Range Y", (float*)&m_velocityRangeY, 0.05f, -1.0f, 1.0f);
 			ImGui::DragFloat2("Velocity Range Z", (float*)&m_velocityRangeZ, 0.05f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Emitter Location", (float*)&m_emitterLocation, 0.001f);
+			if(!m_attachToCube)ImGui::DragFloat3("Emitter Location", (float*)&m_emitterLocation, 0.001f);
 			ImGui::EndTabItem();
 		}
 
@@ -1149,9 +1139,10 @@ void Lab9::onImGUIRender()
 	ImGui::Render();
 }
 
+//Screate shader with vertex shader for quad adn set input texture, this code is repeated alot so just use this instead
 void Lab9::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
-	ShaderDescription shaderDesc; //Path to source files and shader type, used to load the shader.
+	ShaderDescription shaderDesc;
 	shaderDesc.type = ShaderType::rasterization;
 	shaderDesc.vertexSrcPath = "./assets/shaders/Lab2/ScreenVert.glsl";
 	shaderDesc.fragmentSrcPath = fragPath;
