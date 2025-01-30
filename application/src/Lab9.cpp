@@ -938,10 +938,12 @@ void Lab9::onUpdate(float timestep)
 	if (m_blurPassIndex != -1) m_mainRenderer.getRenderPass(m_blurPassIndex).scene->m_actors.at(0).material->setValue("u_blurRadius", m_blurRadius);
 	if (m_edgeDetectionPassIndex != -1) m_mainRenderer.getRenderPass(m_edgeDetectionPassIndex).scene->m_actors.at(0).material->setValue("u_edgeStrength", m_edgeStrength);
 	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
-	if (m_dofPassIndex != -1) m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
+	if (m_dofPassIndex != -1)
+	{
+		m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
+		m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_active", (float)m_blurType);
+	}
 
-	m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_active", (float)m_blurType);
-	//m_mainRenderer.getRenderPass(m_tiltShiftPassIndex).scene->m_actors.at(0).material->setValue("u_active", (float)m_blurType);
 
 	if(m_sepia) m_mainRenderer.getRenderPass(m_sepiaPassIndex).scene->m_actors.at(0).material->setValue("u_active", 1.0f);
 	else m_mainRenderer.getRenderPass(m_sepiaPassIndex).scene->m_actors.at(0).material->setValue("u_active", 0.0f);
@@ -1031,6 +1033,7 @@ void Lab9::onImGUIRender()
 	{
 		if (ImGui::BeginTabItem("G Buffer"))
 		{
+			ImGui::Text("Position");
 			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			GLuint positionTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(0)->getID();
 			ImVec2 imageSize = ImVec2(256, 256);
@@ -1038,12 +1041,15 @@ void Lab9::onImGUIRender()
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)positionTextureID, imageSize, uv0, uv1);
 
+			ImGui::Text("Normals");
 			GLuint normalsTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(1)->getID();
 			ImGui::Image((void*)(intptr_t)normalsTextureID, imageSize, uv0, uv1);
 
+			ImGui::Text("Albedo");
 			GLuint albedoTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(2)->getID();
 			ImGui::Image((void*)(intptr_t)albedoTextureID, imageSize, uv0, uv1);
 
+			ImGui::Text("Specular");
 			GLuint specularTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(3)->getID();
 			ImGui::Image((void*)(intptr_t)specularTextureID, imageSize, uv0, uv1);
 
@@ -1054,6 +1060,7 @@ void Lab9::onImGUIRender()
 		{
 			ImGui::DragFloat3("Light Direction", (float*)&m_lightDirection, 0.001f, -1.0f, 1.0f);
 
+			ImGui::Text("Shadow Map");
 			GLuint textureID = m_mainRenderer.getDepthPass(0).target->getTarget(0)->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
@@ -1064,11 +1071,11 @@ void Lab9::onImGUIRender()
 		if (ImGui::BeginTabItem("Post Processing"))
 		{
 			ImGui::Checkbox("Sepia", &m_sepia);
-			if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour", (float*)&m_tintColour);
+			if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour (Black = No Tint)", (float*)&m_tintColour);
 			if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
 			if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 2.0f);
 			if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
-			if (m_dofPassIndex != -1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+			if (m_dofPassIndex != -1 && m_blurType == 1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
 			ImGui::DragFloat("Tilt Intensity", (float*)&m_tiltIntensity, 0.001f, 0.0f, 0.24f);
 			ImGui::RadioButton("Tilt Shift", &m_blurType, 0);
 			ImGui::SameLine();
