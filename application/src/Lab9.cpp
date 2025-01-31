@@ -714,8 +714,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> dofMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/DepthOfFieldFrag.glsl", dofMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex - 1).target->getTarget(0)); // Pre blur texture
 	dofMaterial->setValue("u_blurTexture", m_mainRenderer.getRenderPass(m_blurPassIndex).target->getTarget(0));
-	dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4)); //Main pass has depth buffer attached to target(1).
-	dofMaterial->setValue("u_focusDistance", 0.9f); //Main pass hasdepth buffer attached to target(1).
+	dofMaterial->setValue("u_depthTexture", GPass.target->getTarget(4));
+	dofMaterial->setValue("u_focusDistance", 0.9f);
 	screen.material = dofMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
