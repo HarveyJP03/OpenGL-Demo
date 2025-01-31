@@ -1,6 +1,6 @@
 #version 460 core
 
-layout(local_size_x = 8, local_size_y = 1) in; //64 particles, 8x1 local, so 8x1 global = 64 in 1D
+layout(local_size_x = 8, local_size_y = 1) in; //256 particles, 8x1 local, so 32x1 global = 256 in 1D
 
 float rand(vec2 co);
 vec3 randomDirection(vec2 seed);
@@ -27,12 +27,12 @@ void main()
 	float randomAge = rand(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.x)); //age
 	randomAge = remap(randomAge, 0, 1, 2.0, 5.0);
 
+	//Just some more randomisation here
 	float randx = rand(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.x * gl_GlobalInvocationID.x));
 	float randy = rand(vec2(gl_GlobalInvocationID.x, randx * gl_GlobalInvocationID.x));
 	float randz = rand(vec2(randy, randx * randy));
 	
 	particle[index].velocity = vec4(randomDirection(vec2(randz, randy * randx) ), 0.69f);
-
 
 	particle[index].position.w = randomAge;
 }

@@ -29,7 +29,7 @@ private:
 
 	//In header, as needs to be accessed from update() to set the colour through ImGui
 	float m_edgeStrength = 1.0f;
-	float m_fogType = -1.0f;
+	int m_fogType = -1;
 
 	int m_previousRenderPassIndex = -1; //To keep track of the index of the last added render pass
 	int m_blurPassIndex = -1;

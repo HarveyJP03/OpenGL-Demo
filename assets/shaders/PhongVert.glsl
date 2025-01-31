@@ -16,7 +16,6 @@ out vec3 fragmentPos;
 out vec3 vertexNormal;
 out vec2 texCoord;
 
-
 uniform mat4 u_model;
 
 void main()

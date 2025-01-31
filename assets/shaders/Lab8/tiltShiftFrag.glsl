@@ -33,7 +33,6 @@ void main()
 		result = mix(colour, blurredColour, blurAmount);
 	}
 
-
 	ppColour = vec4(result, 1.0);
 }
 

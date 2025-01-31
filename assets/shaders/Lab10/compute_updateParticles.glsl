@@ -29,7 +29,7 @@ void main()
 	vec4 gravity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	
 	uint index = gl_GlobalInvocationID.x;
-	particle[index].position.w -= u_deltaTime; //age
+	particle[index].position.w -= u_deltaTime;
 	particle[index].velocity += gravity * u_deltaTime;
 	particle[index].position.xyz += particle[index].velocity.xyz * u_deltaTime + 0.5 * u_deltaTime * u_deltaTime * gravity.xyz; //SUVAT
 
@@ -46,7 +46,7 @@ void main()
 		float randz = rand(vec2(randy, randx * randy));
 	
 		particle[index].velocity = vec4( randomDirection( vec2( randz * randx - randy, randy * randx ) ), 0.69f) * u_speed;
-		
+		//Remap velocity bases off of uniforms here
 		particle[index].velocity.x = remap(particle[index].velocity.x, -1, 1, u_velocityRangeX.x, u_velocityRangeX.y);
 		particle[index].velocity.y = remap(particle[index].velocity.y, -1, 1, u_velocityRangeY.x, u_velocityRangeY.y);
 		particle[index].velocity.z = remap(particle[index].velocity.z, -1, 1, u_velocityRangeZ.x, u_velocityRangeZ.y);

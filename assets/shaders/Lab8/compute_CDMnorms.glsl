@@ -14,6 +14,7 @@ void main()
 	float height = texture(u_heightMap, uv).r;
 	float heightScale = 10.0f;
 
+	//Multiply by 8 aswell as heigh scale, as otherwise the differene in height between texels is too small
 	float right = textureOffset(u_heightMap, uv, ivec2(1,0)).r * (heightScale * 8.0f);
 	float left = textureOffset(u_heightMap, uv, ivec2(-1,0)).r * (heightScale * 8.0f);
 	float up = textureOffset(u_heightMap, uv, ivec2(0,1)).r * (heightScale * 8.0f);

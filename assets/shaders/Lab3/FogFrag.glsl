@@ -6,14 +6,14 @@ in vec2 texCoord;
 
 uniform sampler2D u_inputTexture;
 uniform sampler2D u_depthTexture;
-uniform float u_expSquared;
+uniform float u_fogType;
 
 float LineariseDepth(float depth);
 
 float near = 0.01f;
 float far = 1000.0f;
 
-float fogFactor = 0.0f;
+
 
 void main()
 {
@@ -23,18 +23,20 @@ void main()
 	vec3 fogColour = vec3(1.0f);
 	float linearDepth = LineariseDepth(depth);
 
+	float fogFactor = 0.0f;
 	float fogDensity = 0.1f;
-	if( u_expSquared == 0)
+	
+	if(u_fogType == 0)
 	{
 		float depthNormalised = (linearDepth - near) / (far - near); 
 		fogFactor = depthNormalised;
 	}
-	else if(u_expSquared == 1)
+	else if(u_fogType == 1)
 	{
 		fogFactor = 1.0 - exp(-fogDensity * linearDepth); //We invert here, since without doing this FogFactor is higher the closer to the camera we are
 														  // exp is like curve on graph, starts off faster then slows down the larger depth is (fog scales with depth slower the higher depth is)
 	}
-	else if(u_expSquared == 2)
+	else if(u_fogType == 2)
 	{
 		fogFactor = 1.0 - exp(-fogDensity * linearDepth * fogDensity * linearDepth); //Starts of slower than regular exp, but once its going fog scales with depth more strongly for longer before starting to scale slower
 	}

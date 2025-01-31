@@ -283,6 +283,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	billboard.geometry = billboardVAO;
 	billboard.material = billBoardMaterial;
 
+	//Repeat same process to turn vertex into billboard, but in shadow pass for tree shadows
 	ShaderDescription billboardDepthShaderDesc;
 	billboardDepthShaderDesc.type = ShaderType::geometry;
 	billboardDepthShaderDesc.vertexSrcPath = "./assets/shaders/Lab6/BillboardDepthVert.glsl";
@@ -349,7 +350,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 		m_shadowMapVars.orthoSize, //Top
 		-m_shadowMapVars.orthoSize / 2, //Near
 		m_shadowMapVars.orthoSize * 2);//Far
-
 
 	shadowPass.UBOmanager.setCachedValue("b_lightCamera", "u_view", shadowPass.camera.view);
 	shadowPass.UBOmanager.setCachedValue("b_lightCamera", "u_projection", shadowPass.camera.projection);
@@ -429,7 +429,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	RenderPass skyBoxPass;
 	skyBoxPass.scene = skyBoxOnlyScene;
 	skyBoxPass.parseScene();
-	skyBoxPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	skyBoxPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
 	skyBoxPass.camera.projection = glm::perspective(45.f, m_winRef.getWidthf() / m_winRef.getHeightf(), 0.1f, 1000.0f);
 	skyBoxPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	skyBoxPass.camera.updateView(m_mainScene->m_actors.at(cameraIdx).transform);
@@ -466,7 +466,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	RenderPass LightPass;
 	LightPass.scene = m_screenScene;
 	LightPass.parseScene(); //sorts UBOs for each actor
-	LightPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	LightPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	LightPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 	LightPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
 
@@ -534,7 +534,6 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	}
 
 	m_forwardRenderer.addRenderPass(forwardRenderPass);
-	//m_previousRenderPassIndex++;
 	m_forwardRenderScene->m_actors.at(0).attachScript<RotationScript>(forwardRenderPass.scene->m_actors.at(0), glm::vec3(0.3f, 0.6f, 0.9f), GLFW_KEY_1);
 	//forward render pass setup
 
@@ -553,8 +552,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass FMmixScreenPass;
 	FMmixScreenPass.scene = m_screenScene;
-	FMmixScreenPass.parseScene(); //sorts UBOs for each actor
-	FMmixScreenPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Default FBO, the screenPass is where we draw to the screen
+	FMmixScreenPass.parseScene();
+	FMmixScreenPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout);
 	FMmixScreenPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	FMmixScreenPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -567,7 +566,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Forward and Deferred Rendering mix done
 
 
-	//Linearise and render depth (redundant)
+	////Linearise and render depth (redundant)
 	////Depth Render Pass
 	//std::shared_ptr<Material> depthRenderMaterial;
 	//SetUpPPMaterial("./assets/shaders/Lab3/RenderDepthFrag.glsl", depthRenderMaterial, shadowPass.target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
@@ -576,8 +575,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//
 	//RenderPass depthRenderPass;
 	//depthRenderPass.scene = m_screenScene;
-	//depthRenderPass.parseScene(); //sorts UBOs for each actor
-	//depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); //Target is custom FBO
+	//depthRenderPass.parseScene();
+	//depthRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourAndDepthLayout); 
 	//depthRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	//depthRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -594,14 +593,14 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	std::shared_ptr<Material> fogRenderMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab3/FogFrag.glsl", fogRenderMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0)); //0 = Colour attatchment, 1 = depth (unless there's more colour attatchments)
 	fogRenderMaterial->setValue("u_depthTexture", GPass.target->getTarget(4));
-	fogRenderMaterial->setValue("u_expSquared", 4.f);
+	fogRenderMaterial->setValue("u_fogType", 4.f);
 	screen.material = fogRenderMaterial;
 	m_screenScene->m_actors.push_back(screen);
 
 	RenderPass fogRenderPass;
 	fogRenderPass.scene = m_screenScene;
-	fogRenderPass.parseScene(); //sorts UBOs for each actor
-	fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	fogRenderPass.parseScene();
+	fogRenderPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	fogRenderPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	fogRenderPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -625,7 +624,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass edgeDetectionPass;
 	edgeDetectionPass.scene = m_screenScene;
-	edgeDetectionPass.parseScene(); //sorts UBOs for each actor
+	edgeDetectionPass.parseScene();
 	edgeDetectionPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
 	edgeDetectionPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
@@ -648,8 +647,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass tintPass;
 	tintPass.scene = m_screenScene;
-	tintPass.parseScene(); //sorts UBOs for each actor
-	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	tintPass.parseScene(); 
+	tintPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	tintPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	tintPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -671,8 +670,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	
 	RenderPass sepiaPass;
 	sepiaPass.scene = m_screenScene;
-	sepiaPass.parseScene(); //sorts UBOs for each actor
-	sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	sepiaPass.parseScene(); 
+	sepiaPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	sepiaPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	sepiaPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -686,7 +685,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 	//Sepia Pass Setup
 
 
-	//Blur Pass (for tilt shift or depth of field, both cannot be active at the same time)
+	//Blur Pass (for tilt shift and depth of field)
 	std::shared_ptr<Material> blurMaterial;
 	SetUpPPMaterial("./assets/shaders/Lab2/BlurFrag.glsl", blurMaterial, m_mainRenderer.getRenderPass(m_previousRenderPassIndex).target->getTarget(0));
 	blurMaterial->setValue("u_screenSize", glm::vec2(width, height));
@@ -696,8 +695,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass blurPass;
 	blurPass.scene = m_screenScene;
-	blurPass.parseScene(); //sorts UBOs for each actor
-	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	blurPass.parseScene();
+	blurPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	blurPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	blurPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -722,8 +721,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass dofPass;
 	dofPass.scene = m_screenScene;
-	dofPass.parseScene(); //sorts UBOs for each actor
-	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	dofPass.parseScene(); 
+	dofPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	dofPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	dofPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -745,8 +744,8 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass tiltShiftPass;
 	tiltShiftPass.scene = m_screenScene;
-	tiltShiftPass.parseScene(); //sorts UBOs for each actor
-	tiltShiftPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); //Target is custom FBO
+	tiltShiftPass.parseScene(); 
+	tiltShiftPass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout); 
 	tiltShiftPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
 	tiltShiftPass.camera.projection = glm::ortho(0.f, width, height, 0.f);
@@ -768,7 +767,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass vignettePass;
 	vignettePass.scene = m_screenScene;
-	vignettePass.parseScene(); //sorts UBOs for each actor
+	vignettePass.parseScene(); 
 	vignettePass.target = std::make_shared<FBO>(m_winRef.getSize(), colourLayout);
 	vignettePass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
@@ -790,7 +789,7 @@ Lab9::Lab9(GLFWWindowImpl& win) : Layer(win)
 
 	RenderPass screenPass;
 	screenPass.scene = m_screenScene;
-	screenPass.parseScene(); //sorts UBOs for each actor
+	screenPass.parseScene(); 
 	screenPass.target = std::make_shared<FBO>(); //Default FBO, the screenPass is where we draw to the screen
 	screenPass.viewPort = { 0, 0, m_winRef.getWidth(), m_winRef.getHeight() };
 
@@ -937,7 +936,7 @@ void Lab9::onUpdate(float timestep)
 	if (m_tintPassIndex != -1) m_mainRenderer.getRenderPass(m_tintPassIndex).scene->m_actors.at(0).material->setValue("u_tintColour", m_tintColour);
 	if (m_blurPassIndex != -1) m_mainRenderer.getRenderPass(m_blurPassIndex).scene->m_actors.at(0).material->setValue("u_blurRadius", m_blurRadius);
 	if (m_edgeDetectionPassIndex != -1) m_mainRenderer.getRenderPass(m_edgeDetectionPassIndex).scene->m_actors.at(0).material->setValue("u_edgeStrength", m_edgeStrength);
-	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_expSquared", m_fogType);
+	if (m_fogPassIndex != -1) m_mainRenderer.getRenderPass(m_fogPassIndex).scene->m_actors.at(0).material->setValue("u_fogType", (float)m_fogType);
 	if (m_dofPassIndex != -1)
 	{
 		m_mainRenderer.getRenderPass(m_dofPassIndex).scene->m_actors.at(0).material->setValue("u_focusDistance", m_focusDistance);
@@ -990,7 +989,7 @@ void Lab9::onUpdate(float timestep)
 	lightPassMaterial->setValue("u_shadowMap", m_mainRenderer.getDepthPass(0).target->getTarget(0));
 	lightPassMaterial->setValue("u_lightSpaceTransform", m_mainRenderer.getDepthPass(0).camera.projection * m_mainRenderer.getDepthPass(0).camera.view);
 
-	//tiltShiftMaterial->setValue("u_intensity", m_tiltIntensity);
+	tiltShiftMaterial->setValue("u_intensity", m_tiltIntensity);
 
 	noiseMaterial->setValue("u_frequency", m_frequency);
 	noiseMaterial->setValue("u_amplitude", m_amplitude);
@@ -1031,10 +1030,26 @@ void Lab9::onImGUIRender()
 	ImGui::Checkbox("WireFrame", &m_wireFrame);
 	if (ImGui::BeginTabBar("Tabs"))
 	{
+		if (ImGui::BeginTabItem("Read Me"))
+		{
+			ImGui::TextWrapped("Here's what I have covered with this coursework:");
+			ImGui::TextWrapped(" -Skybox");
+			ImGui::TextWrapped(" -FrameBuffers (Colour + Depth, post processing)");
+			ImGui::TextWrapped(" -Shadow Mapping (with billboards too)");
+			ImGui::TextWrapped(" -Deffered Rendering");
+			ImGui::TextWrapped(" -Geometry Shaders (billboarding + surface normal option in terrain tab)");
+			ImGui::TextWrapped(" -Tesselation Shaders (distance based)");
+			ImGui::TextWrapped(" -Compute Shaders (writing noise texture, CDM normal texture for noise texture and particle system)");
+			ImGui::TextWrapped(" -SSBO (Particle System)");
+			ImGui::NewLine();
+			ImGui::TextWrapped("One thing to note, is that I am using a mixture of forward and deffered rendering (cube + particles forward). There is a render pass that mixes the two textures together based off of depth");
+			ImGui::NewLine();
+			ImGui::TextWrapped("IMPORTANT: Going back to previous layers will not work, as I unfortunately changed some shaders to work with future weeks without creating a new version of them in a new folder, so only the most recent layer will work(sorry for any inconvenience!)");
+			ImGui::EndTabItem();
+		}
 		if (ImGui::BeginTabItem("G Buffer"))
 		{
 			ImGui::Text("Position");
-			//Display pre tone mapped + gamma corrected FBO texture in GUI for comparision
 			GLuint positionTextureID = m_mainRenderer.getRenderPass(1).target->getTarget(0)->getID();
 			ImVec2 imageSize = ImVec2(256, 256);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
@@ -1070,32 +1085,51 @@ void Lab9::onImGUIRender()
 		}
 		if (ImGui::BeginTabItem("Post Processing"))
 		{
+
 			ImGui::Checkbox("Sepia", &m_sepia);
 			if (m_tintPassIndex != -1) ImGui::ColorEdit3("Tint Colour (Black = No Tint)", (float*)&m_tintColour);
-			if (m_fogPassIndex != -1)ImGui::DragFloat("Fog Type", (float*)&m_fogType, 0.025f, -1.f, 2.0f, "%1.0f");
-			if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Edge Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 2.0f);
-			if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
-			if (m_dofPassIndex != -1 && m_blurType == 1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
-			ImGui::DragFloat("Tilt Intensity", (float*)&m_tiltIntensity, 0.001f, 0.0f, 0.24f);
+			if (m_fogPassIndex != -1)
+			{
+				ImGui::RadioButton("No Fog", &m_fogType, -1);
+				ImGui::SameLine();
+				ImGui::RadioButton("Linear Fog", &m_fogType, 0);
+				ImGui::SameLine();
+				ImGui::RadioButton("Exponential Fog", &m_fogType, 1);
+				ImGui::SameLine();
+				ImGui::RadioButton("Exponential Squared Fog", &m_fogType, 2);
+			}
+			ImGui::TextWrapped("Outline strength, 1.0 = no effect, 0.0 = maximum effect");
+			if (m_edgeDetectionPassIndex != -1)ImGui::DragFloat("Outline Strength", (float*)&m_edgeStrength, 0.002f, 0.f, 1.0f);
 			ImGui::RadioButton("Tilt Shift", &m_blurType, 0);
 			ImGui::SameLine();
 			ImGui::RadioButton("Depth Of Field + Tilt Shift", &m_blurType, 1);
+			ImGui::TextWrapped("Blur Radius, for tilt shift and depth of field blur level");
+			if (m_blurPassIndex != -1)ImGui::DragFloat("Blur Radius", (float*)&m_blurRadius, 0.025f, 0.0f, 5.0f);
+			if (m_dofPassIndex != -1 && m_blurType == 1)ImGui::TextWrapped("Focus Distance, what distance depth of field will not blur");
+			if (m_dofPassIndex != -1 && m_blurType == 1)ImGui::DragFloat("Focus Distance", (float*)&m_focusDistance, 0.002f, 0.f, 1.0f);
+			ImGui::TextWrapped("Rate of change for blur in tilt shift areas (top and bottom of screen");
+			ImGui::DragFloat("Tilt Intensity", (float*)&m_tiltIntensity, 0.001f, 0.0f, 0.24f);
 
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Terrain"))
 		{
+			ImGui::TextWrapped("Remap terrain texture UV's to look good, since tri plannar does not keep UV's in [0,1]");
 			ImGui::DragFloat("Texture Remap Range", (float*)&m_remapRange, 0.2f, 0.f, 1000.0f);
-			ImGui::Checkbox("Geo Normals", &m_geoNormal);
+			ImGui::Checkbox("Geometry Shader Surface Normals", &m_geoNormal);
+			ImGui::NewLine();
+			ImGui::TextWrapped("I've added a second floor behond the camera with exaggerated distance based tesselation for demonstration");
+
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Noise"))
 		{
 			if (m_noiseType != 5)ImGui::DragFloat("Frequency", (float*)&m_frequency, 0.5f, 0.0f, 200.f);
 			ImGui::DragFloat("Amplitude", (float*)&m_amplitude, 0.01f, 0.0f, 200.f);
-			if (m_noiseType != 5)ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
-			if (m_noiseType != 5) ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
+			if (m_noiseType != 0 && m_noiseType != 5)ImGui::DragFloat("Lacunarity", (float*)&m_lacunarity, 0.02f, 0.0f, 10.f);
+			if (m_noiseType != 0 && m_noiseType != 5) ImGui::DragFloat("Persistence", (float*)&m_persistence, 0.02f, 0.0f, 10.0f);
 
+			ImGui::TextWrapped("You will need to turn down the amplitude to see rigidFBM");
 			ImGui::RadioButton("Gradient", &m_noiseType, 0);
 			ImGui::SameLine();
 			ImGui::RadioButton("FBM", &m_noiseType, 1);
@@ -1111,33 +1145,36 @@ void Lab9::onImGUIRender()
 			if(m_noiseType == 5) ImGui::Checkbox("Invert", &m_invertWorley);
 			if (m_noiseType == 5) ImGui::Checkbox("Animate", &m_animateWorley);
 			
+			ImGui::TextWrapped("Height Map (Noise)");
 			GLuint textureID = m_mainRenderer.getComputePass(0).images[0].texture->getID();
 			ImVec2 imageSize = ImVec2(512, 512);
 			ImVec2 uv0 = ImVec2(0.0f, 1.0f);
 			ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
-#
+
+			ImGui::TextWrapped("Normal Map (CDM)");
 			textureID = m_mainRenderer.getComputePass(2).images[0].texture->getID();
 			imageSize = ImVec2(512, 512);
 			uv0 = ImVec2(0.0f, 1.0f);
 	        uv1 = ImVec2(1.0f, 0.0f);
 			ImGui::Image((void*)(intptr_t)textureID, imageSize, uv0, uv1);
 
-
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Particle System"))
 		{
 			ImGui::DragFloat("Speed", (float*)&m_speed, 0.01f, 0.0f, 5.0f);
+			ImGui::TextWrapped("Cube Trail attaches particle system to cube and reduces speed");
 			ImGui::Checkbox("Cube Trail", &m_attachToCube);
 			ImGui::ColorEdit3("Particle Colour", (float*)&m_particleColour);
+			if (!m_attachToCube)ImGui::DragFloat3("Emitter Location", (float*)&m_emitterLocation, 0.001f);
+
+			ImGui::TextWrapped("Remap Velocity to range");
 			ImGui::DragFloat2("Velocity Range X", (float*)&m_velocityRangeX, 0.05f, -1.0f, 1.0f);
 			ImGui::DragFloat2("Velocity Range Y", (float*)&m_velocityRangeY, 0.05f, -1.0f, 1.0f);
 			ImGui::DragFloat2("Velocity Range Z", (float*)&m_velocityRangeZ, 0.05f, -1.0f, 1.0f);
-			if(!m_attachToCube)ImGui::DragFloat3("Emitter Location", (float*)&m_emitterLocation, 0.001f);
 			ImGui::EndTabItem();
 		}
-
 
 		ImGui::EndTabBar();
 	}
@@ -1146,7 +1183,7 @@ void Lab9::onImGUIRender()
 	ImGui::Render();
 }
 
-//Screate shader with vertex shader for quad adn set input texture, this code is repeated alot so just use this instead
+//Screate shader with vertex shader for quad and set input texture, this code is repeated alot so just use this instead
 void Lab9::SetUpPPMaterial(std::string fragPath, std::shared_ptr<Material>& mat, std::shared_ptr<Texture> inputTex)
 {
 	ShaderDescription shaderDesc;
