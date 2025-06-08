@@ -9,3 +9,5 @@ There is an application ‘application’ which uses this renderer. The applicat
 Use this repository to build your coursework. The application uses Layers. We'd suggest to use a Layer for each lab, and possibly instead of branches.
 
 Commit regularly.
+
+Run CMake.bat to get a sln file, in the builds folder.
